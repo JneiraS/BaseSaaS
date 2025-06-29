@@ -7,17 +7,15 @@ import (
 )
 
 func NavBar(user any) gom.Node {
-	commonElements := []gom.Node{
-		gomh.Class("navbar"),
-		gomh.A(
-			gomh.Class("navbar-brand"),
-			gom.Text("Logo"),
-		),
-	}
+	logoElement := gomh.A(
+		gomh.Class("navbar-brand"),
+		gom.Text("🚀"),
+	)
 
 	if user != nil {
 		return gomh.Section(
-			commonElements[0],
+			gomh.Class("navbar"),
+			logoElement,
 			gomh.Div(
 				gomh.Class("ctn-btn"),
 				containerButton(),
@@ -26,7 +24,8 @@ func NavBar(user any) gom.Node {
 		)
 	}
 	return gomh.Section(
-		commonElements[0],
+		gomh.Class("navbar"),
+		logoElement,
 		gomh.Div(
 			gomh.Class("ctn-btn"),
 			elements.Button("Connexion", "btn", "/login"),

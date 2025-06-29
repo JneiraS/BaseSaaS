@@ -8,8 +8,7 @@
 <body>
     
     {{if .user}}
-        <p>✅ Vous êtes connecté !</p>
-        {{.navbar|safe}}
+    {{template "connected_home" .}}
     {{else}}
     {{.navbar|safe}}
     {{end}}
