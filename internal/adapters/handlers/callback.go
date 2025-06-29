@@ -5,7 +5,7 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/JneiraS/BaseSasS/domain/models"
+	"github.com/JneiraS/BaseSasS/internal/domain/models"
 	"github.com/coreos/go-oidc/v3/oidc"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"

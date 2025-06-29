@@ -10,8 +10,8 @@ import (
 	"os"
 	"time"
 
-	"github.com/JneiraS/BaseSasS/domain/models"
 	h "github.com/JneiraS/BaseSasS/internal/adapters/handlers"
+	"github.com/JneiraS/BaseSasS/internal/domain/models"
 	"github.com/coreos/go-oidc/v3/oidc"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/cookie"
