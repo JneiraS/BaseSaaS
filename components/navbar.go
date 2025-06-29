@@ -15,7 +15,11 @@ func NavBar(user any) gom.Node {
 					gomh.Class("navbar-brand"),
 					gom.Text("Logo"),
 				),
-				connButton(),
+				gomh.Div(
+					gomh.Class("ctn-btn"),
+					containerButton(),
+					elements.Button("Déconnexion", "btn", "/logout"),
+				),
 			),
 		)
 	}
@@ -31,10 +35,14 @@ func NavBar(user any) gom.Node {
 	)
 }
 
-func connButton() gom.Node {
+func containerButton() gom.Node {
 	return gomh.Div(
-		gomh.Class("ctn-btn"),
-		elements.Button("Mon profil", "btn", "/profile"),
-		elements.Button("Déconnexion", "btn", "/logout"),
+		gomh.Class("dropdown"),
+		gomh.A(gom.Text("Menu ▼")),
+		gomh.Ul(
+			gomh.A(gom.Text("Mon profil"), gom.Attr("href", "/profile")),
+			gomh.A(gom.Text("Mes favoris"), gom.Attr("href", "/favoris")),
+			gomh.A(gom.Text("Mes commandes"), gom.Attr("href", "/commandes")),
+		),
 	)
 }
