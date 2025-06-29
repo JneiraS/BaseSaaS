@@ -41,4 +41,5 @@ require (
 	github.com/joho/godotenv v1.5.1
 	golang.org/x/crypto v0.37.0 // indirect
 	golang.org/x/oauth2 v0.28.0 // indirect
+	maragu.dev/gomponents v1.1.0
 )

@@ -17,7 +17,7 @@
         <a href="/logout" class="btn">Se déconnecter</a>
     {{else}}
         <p>❌ Vous n'êtes pas connecté</p>
-        <a href="/login" class="btn">Se connecter</a>
+        {{.button|safe}}
     {{end}}
 </body>
 </html>

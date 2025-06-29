@@ -109,9 +109,6 @@ func SetupServer() *gin.Engine {
 		c.Next()
 	})
 
-	// Templates
-	r.LoadHTMLGlob("templates/*")
-
 	r.SetFuncMap(template.FuncMap{
 		"safe": func(s any) template.HTML {
 			switch v := s.(type) {
@@ -124,7 +121,8 @@ func SetupServer() *gin.Engine {
 			}
 		},
 	})
-
+	// Templates
+	r.LoadHTMLGlob("templates/*")
 	return r
 }
 
