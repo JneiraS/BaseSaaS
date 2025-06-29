@@ -123,6 +123,7 @@ func SetupServer() *gin.Engine {
 	})
 	// Templates
 	r.LoadHTMLGlob("templates/*")
+	r.Static("/static", "./static")
 	return r
 }
 
