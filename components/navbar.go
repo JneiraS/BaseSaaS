@@ -9,29 +9,25 @@ import (
 func NavBar(user any) gom.Node {
 	if user != nil {
 		return gomh.Section(
-			gomh.Div(
-				gomh.Class("navbar"),
-				gomh.A(
-					gomh.Class("navbar-brand"),
-					gom.Text("Logo"),
-				),
-				gomh.Div(
-					gomh.Class("ctn-btn"),
-					containerButton(),
-					elements.Button("Déconnexion", "btn", "/logout"),
-				),
-			),
-		)
-	}
-	return gomh.Section(
-		gomh.Div(
 			gomh.Class("navbar"),
 			gomh.A(
 				gomh.Class("navbar-brand"),
 				gom.Text("Logo"),
 			),
-			elements.Button("Connexion", "btn", "/login"),
+			gomh.Div(
+				gomh.Class("ctn-btn"),
+				containerButton(),
+				elements.Button("Déconnexion", "btn", "/logout"),
+			),
+		)
+	}
+	return gomh.Section(
+		gomh.Class("navbar"),
+		gomh.A(
+			gomh.Class("navbar-brand"),
+			gom.Text("Logo"),
 		),
+		elements.Button("Connexion", "btn", "/login"),
 	)
 }
 
