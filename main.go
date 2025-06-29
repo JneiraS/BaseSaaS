@@ -12,6 +12,7 @@ import (
 
 	h "github.com/JneiraS/BaseSasS/internal/adapters/handlers"
 	"github.com/JneiraS/BaseSasS/internal/domain/models"
+	"github.com/JneiraS/BaseSasS/internal/services"
 	"github.com/coreos/go-oidc/v3/oidc"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/cookie"
@@ -20,58 +21,41 @@ import (
 	"golang.org/x/oauth2"
 )
 
+type App struct {
+	authService  *services.AuthService
+	authHandlers *h.AuthHandlers
+}
+
 func LoadEnv() error {
 	return godotenv.Load()
 }
 
-var (
-	provider *oidc.Provider
-)
-
 func init() {
-	// Enregistrer le type User pour gob
 	gob.Register(models.User{})
-
-	// Chargement des variables d'environnement
-	err := LoadEnv()
-	if err != nil {
-		log.Printf("Avertissement: Impossible de charger .env: %v", err)
-	}
-
-	// Initialiser le provider OIDC de manière sécurisée
-	initOIDCProvider()
 }
 
-func initOIDCProvider() {
+func (app *App) initOIDCProvider() error {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	// Obtenir l'URL du provider
 	providerURL := os.Getenv("OIDC_PROVIDER_URL")
 	if providerURL == "" {
 		providerURL = "http://localhost:8080"
 	}
 
-	log.Printf("Tentative de connexion au provider OIDC: %s", providerURL)
-
-	var err error
-	provider, err = oidc.NewProvider(ctx, providerURL)
+	provider, err := oidc.NewProvider(ctx, providerURL)
 	if err != nil {
-		log.Printf("AVERTISSEMENT: Impossible de se connecter au provider OIDC (%s): %v", providerURL, err)
-		log.Printf("L'authentification ne sera pas disponible. Assurez-vous que Zitadel fonctionne.")
-		return
+		return fmt.Errorf("impossible de se connecter au provider OIDC: %w", err)
 	}
 
-	// Vérifier les variables d'environnement
 	clientID := os.Getenv("CLIENT_ID")
 	clientSecret := os.Getenv("CLIENT_SECRET")
 
 	if clientID == "" || clientSecret == "" {
-		log.Printf("AVERTISSEMENT: CLIENT_ID ou CLIENT_SECRET manquant dans les variables d'environnement")
-		return
+		return fmt.Errorf("CLIENT_ID ou CLIENT_SECRET manquant")
 	}
 
-	h.Oauth2Config = &oauth2.Config{
+	oauth2Config := &oauth2.Config{
 		ClientID:     clientID,
 		ClientSecret: clientSecret,
 		RedirectURL:  "http://localhost:3000/callback",
@@ -79,19 +63,21 @@ func initOIDCProvider() {
 		Scopes:       []string{oidc.ScopeOpenID, "profile", "email"},
 	}
 
-	// IMPORTANT: Passer le provider aux handlers
-	h.Provider = provider
+	app.authService = services.NewAuthService(provider, oauth2Config)
+	app.authHandlers = h.NewAuthHandlers(app.authService)
 
-	log.Println("✅ Provider OIDC initialisé avec succès")
+	return nil
 }
 
-func SetupServer() *gin.Engine {
+func (app *App) setupServer() *gin.Engine {
 	r := gin.Default()
 
-	// Configuration des sessions
-	secretKey := []byte("ma-cle-secrete-de-32-caracteres-minimum-pour-securite")
-	store := cookie.NewStore(secretKey)
+	secretKey := []byte(os.Getenv("SESSION_SECRET"))
+	if len(secretKey) == 0 {
+		secretKey = []byte("ma-cle-secrete-de-32-caracteres-minimum-pour-securite")
+	}
 
+	store := cookie.NewStore(secretKey)
 	store.Options(sessions.Options{
 		Path:     "/",
 		MaxAge:   86400,
@@ -101,13 +87,6 @@ func SetupServer() *gin.Engine {
 	})
 
 	r.Use(sessions.Sessions("mysession", store))
-
-	// Middleware de logging
-	r.Use(func(c *gin.Context) {
-		session := sessions.Default(c)
-		log.Printf("Session avant requête - Path: %s, Session ID: %v", c.Request.URL.Path, session.Get("id"))
-		c.Next()
-	})
 
 	r.SetFuncMap(template.FuncMap{
 		"safe": func(s any) template.HTML {
@@ -121,56 +100,59 @@ func SetupServer() *gin.Engine {
 			}
 		},
 	})
-	// Templates
+
 	r.LoadHTMLGlob("templates/*")
 	r.Static("/static", "./static")
 	return r
 }
 
-func main() {
-	r := SetupServer()
-
-	// Routes
+func (app *App) setupRoutes(r *gin.Engine) {
 	r.GET("/", h.HomeHandler)
-	r.GET("/login", h.LoginHandler)
-	r.GET("/callback", h.CallbackHandler)
-	r.GET("/profile", authRequired(), h.ProfileHandler)
-	r.GET("/logout", h.LogoutHandler)
+	r.GET("/profile", app.authRequired(), h.ProfileHandler)
 
-	// Route de diagnostic
+	if app.authService != nil {
+		r.GET("/login", app.authHandlers.LoginHandler)
+		r.GET("/logout", app.authHandlers.LogoutHandler)
+		r.GET("/callback", app.authHandlers.CallbackHandler)
+	}
+
 	r.GET("/health", func(c *gin.Context) {
 		status := gin.H{
-			"server":        "running",
-			"oidc_provider": provider != nil,
-			"oauth2_config": h.Oauth2Config != nil,
+			"server":       "running",
+			"auth_service": app.authService != nil,
 		}
 		c.JSON(http.StatusOK, status)
 	})
-
-	log.Println("🚀 Serveur démarré sur :3000")
-	log.Println("📋 Visitez http://localhost:3000/health pour vérifier l'état des services")
-	r.Run(":3000")
 }
 
-// Middleware d'authentification
-func authRequired() gin.HandlerFunc {
+func (app *App) authRequired() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		session := sessions.Default(c)
 		user := session.Get("user")
 
-		log.Printf("Middleware auth - User: %v", user)
-		log.Printf("Middleware auth - Path: %s", c.Request.URL.Path)
-
 		if user == nil {
-			if c.Request.URL.Path == "/login" {
-				c.Next()
-				return
-			}
 			c.Redirect(http.StatusFound, "/login")
 			c.Abort()
 			return
 		}
-
 		c.Next()
 	}
+}
+
+func main() {
+	app := &App{}
+
+	if err := LoadEnv(); err != nil {
+		log.Printf("Avertissement: Impossible de charger .env: %v", err)
+	}
+
+	if err := app.initOIDCProvider(); err != nil {
+		log.Printf("AVERTISSEMENT: Authentification indisponible: %v", err)
+	}
+
+	r := app.setupServer()
+	app.setupRoutes(r)
+
+	log.Println("🚀 Serveur démarré sur :3000")
+	r.Run(":3000")
 }

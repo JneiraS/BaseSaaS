@@ -1,1 +1,7 @@
 .env
+*.log
+dist/
+build/
+main_refactored.go
+main_old.go
+AGENT.md
