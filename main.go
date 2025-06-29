@@ -1,4 +1,3 @@
-// main.go
 package main
 
 import (
@@ -7,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/JneiraS/BaseSasS/domain/models"
 	h "github.com/JneiraS/BaseSasS/internal/adapters/handlers"
@@ -33,45 +33,74 @@ func init() {
 	// Chargement des variables d'environnement
 	err := LoadEnv()
 	if err != nil {
-		log.Fatal("Erreur lors du chargement des variables d'environnement:", err)
+		log.Printf("Avertissement: Impossible de charger .env: %v", err)
 	}
 
-	// Configuration Zitadel
-	ctx := context.Background()
+	// Initialiser le provider OIDC de manière sécurisée
+	initOIDCProvider()
+}
 
-	// Remplacez par l'URL de votre instance Zitadel
-	provider, err = oidc.NewProvider(ctx, "http://localhost:8080")
+func initOIDCProvider() {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	// Obtenir l'URL du provider
+	providerURL := os.Getenv("OIDC_PROVIDER_URL")
+	if providerURL == "" {
+		providerURL = "http://localhost:8080"
+	}
+
+	log.Printf("Tentative de connexion au provider OIDC: %s", providerURL)
+
+	var err error
+	provider, err = oidc.NewProvider(ctx, providerURL)
 	if err != nil {
-		log.Fatal("Erreur provider OIDC:", err)
+		log.Printf("AVERTISSEMENT: Impossible de se connecter au provider OIDC (%s): %v", providerURL, err)
+		log.Printf("L'authentification ne sera pas disponible. Assurez-vous que Zitadel fonctionne.")
+		return
+	}
+
+	// Vérifier les variables d'environnement
+	clientID := os.Getenv("CLIENT_ID")
+	clientSecret := os.Getenv("CLIENT_SECRET")
+
+	if clientID == "" || clientSecret == "" {
+		log.Printf("AVERTISSEMENT: CLIENT_ID ou CLIENT_SECRET manquant dans les variables d'environnement")
+		return
 	}
 
 	h.Oauth2Config = &oauth2.Config{
-		ClientID:     os.Getenv("CLIENT_ID"),
-		ClientSecret: os.Getenv("CLIENT_SECRET"),
+		ClientID:     clientID,
+		ClientSecret: clientSecret,
 		RedirectURL:  "http://localhost:3000/callback",
 		Endpoint:     provider.Endpoint(),
 		Scopes:       []string{oidc.ScopeOpenID, "profile", "email"},
 	}
+
+	// IMPORTANT: Passer le provider aux handlers
+	h.Provider = provider
+
+	log.Println("✅ Provider OIDC initialisé avec succès")
 }
+
 func main() {
 	r := gin.Default()
 
-	// Configuration des sessions avec une clé plus longue et sécurisée
+	// Configuration des sessions
 	secretKey := []byte("ma-cle-secrete-de-32-caracteres-minimum-pour-securite")
 	store := cookie.NewStore(secretKey)
 
-	// Options de session plus permissives pour le développement
 	store.Options(sessions.Options{
 		Path:     "/",
-		MaxAge:   86400,                    // 1 jour
-		HttpOnly: false,                    // Permettre l'accès JavaScript pour debug
-		Secure:   false,                    // HTTP en développement
-		SameSite: http.SameSiteDefaultMode, // Plus permissif
+		MaxAge:   86400,
+		HttpOnly: false,
+		Secure:   false,
+		SameSite: http.SameSiteDefaultMode,
 	})
 
 	r.Use(sessions.Sessions("mysession", store))
 
-	// Middleware de logging des sessions
+	// Middleware de logging
 	r.Use(func(c *gin.Context) {
 		session := sessions.Default(c)
 		log.Printf("Session avant requête - Path: %s, Session ID: %v", c.Request.URL.Path, session.Get("id"))
@@ -85,10 +114,21 @@ func main() {
 	r.GET("/", h.HomeHandler)
 	r.GET("/login", h.LoginHandler)
 	r.GET("/callback", h.CallbackHandler)
-	r.GET("/profile", h.ProfileHandler)
+	r.GET("/profile", authRequired(), h.ProfileHandler)
 	r.GET("/logout", h.LogoutHandler)
 
-	log.Println("Serveur démarré sur :3000")
+	// Route de diagnostic
+	r.GET("/health", func(c *gin.Context) {
+		status := gin.H{
+			"server":        "running",
+			"oidc_provider": provider != nil,
+			"oauth2_config": h.Oauth2Config != nil,
+		}
+		c.JSON(http.StatusOK, status)
+	})
+
+	log.Println("🚀 Serveur démarré sur :3000")
+	log.Println("📋 Visitez http://localhost:3000/health pour vérifier l'état des services")
 	r.Run(":3000")
 }
 
@@ -102,7 +142,6 @@ func authRequired() gin.HandlerFunc {
 		log.Printf("Middleware auth - Path: %s", c.Request.URL.Path)
 
 		if user == nil {
-			// Éviter la redirection infinie
 			if c.Request.URL.Path == "/login" {
 				c.Next()
 				return

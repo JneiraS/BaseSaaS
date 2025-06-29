@@ -5,113 +5,139 @@ import (
 	"log"
 	"net/http"
 
-	m "github.com/JneiraS/BaseSasS/domain/models"
+	"github.com/JneiraS/BaseSasS/domain/models"
 	"github.com/coreos/go-oidc/v3/oidc"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 )
 
-var (
-	provider *oidc.Provider
-)
+// Variable globale pour le provider (doit être définie dans main.go)
+var Provider *oidc.Provider
 
-// Callback après login
+// CallbackHandler gère le callback OAuth2
 func CallbackHandler(c *gin.Context) {
-	session := sessions.Default(c)
-
-	// Vérifier le state
-	savedState := session.Get("state")
-	queryState := c.Query("state")
-
-	log.Printf("Callback - Saved state: %v, Query state: %s", savedState, queryState)
-
-	if savedState == nil {
-		log.Printf("Aucun state sauvegardé en session")
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Aucun state en session"})
-		return
-	}
-
-	if savedState.(string) != queryState {
-		log.Printf("State invalide")
-		c.JSON(http.StatusBadRequest, gin.H{"error": "State invalide"})
-		return
-	}
-
-	// Vérifier s'il y a une erreur dans la callback
-	if errMsg := c.Query("error"); errMsg != "" {
-		log.Printf("Erreur OAuth: %s - %s", errMsg, c.Query("error_description"))
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error":   "Erreur OAuth",
-			"details": errMsg,
+	// Vérifier que le provider et la config OAuth2 sont disponibles
+	if Provider == nil {
+		log.Printf("ERREUR: Provider OIDC non initialisé")
+		c.JSON(http.StatusServiceUnavailable, gin.H{
+			"error":   "Service d'authentification non disponible",
+			"message": "Le provider OIDC n'est pas initialisé",
 		})
 		return
 	}
 
-	// Échanger le code contre un token
-	code := c.Query("code")
-	if code == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Code manquant"})
+	if !isOAuth2Configured() {
+		log.Printf("ERREUR: OAuth2Config non initialisé")
+		c.JSON(http.StatusServiceUnavailable, gin.H{
+			"error": "Configuration OAuth2 non disponible",
+		})
 		return
 	}
 
-	log.Printf("Échange du code: %s", code)
+	session := sessions.Default(c)
 
-	token, err := Oauth2Config.Exchange(context.Background(), code)
+	// Récupérer le code et le state depuis les paramètres de requête
+	code := c.Query("code")
+	state := c.Query("state")
+
+	log.Printf("Callback reçu - Code: %s, State: %s", code, state)
+
+	// Vérifier le state pour éviter les attaques CSRF
+	savedState := session.Get("state")
+	if savedState == nil {
+		log.Printf("ERREUR: Aucun state trouvé en session")
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "State manquant en session",
+		})
+		return
+	}
+
+	if state != savedState.(string) {
+		log.Printf("ERREUR: State invalide. Reçu: %s, Attendu: %s", state, savedState)
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "State invalide - possible attaque CSRF",
+		})
+		return
+	}
+
+	// Nettoyer le state de la session
+	session.Delete("state")
+
+	// Échanger le code contre un token
+	ctx := context.Background()
+	token, err := Oauth2Config.Exchange(ctx, code)
 	if err != nil {
-		log.Printf("Erreur échange token: %v", err)
+		log.Printf("ERREUR échange de code: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"error":   "Erreur échange token",
+			"error":   "Erreur lors de l'échange du code",
 			"details": err.Error(),
 		})
 		return
 	}
+
+	log.Printf("Token obtenu avec succès")
 
 	// Extraire l'ID token
 	rawIDToken, ok := token.Extra("id_token").(string)
 	if !ok {
-		log.Printf("Pas d'ID token dans la réponse")
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Pas d'ID token"})
+		log.Printf("ERREUR: ID token manquant")
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "ID token manquant dans la réponse",
+		})
 		return
 	}
 
 	// Vérifier l'ID token
-	verifier := provider.Verifier(&oidc.Config{ClientID: Oauth2Config.ClientID})
-	idToken, err := verifier.Verify(context.Background(), rawIDToken)
+	verifier := Provider.Verifier(&oidc.Config{ClientID: Oauth2Config.ClientID})
+	idToken, err := verifier.Verify(ctx, rawIDToken)
 	if err != nil {
-		log.Printf("Token invalide: %v", err)
+		log.Printf("ERREUR vérification ID token: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"error":   "Token invalide",
+			"error":   "Erreur de vérification du token",
 			"details": err.Error(),
 		})
 		return
 	}
 
-	// Extraire les infos utilisateur
-	var user m.User
-	if err := idToken.Claims(&user); err != nil {
-		log.Printf("Erreur claims: %v", err)
+	// Extraire les claims
+	var claims struct {
+		Email         string `json:"email"`
+		EmailVerified bool   `json:"email_verified"`
+		Name          string `json:"name"`
+		Sub           string `json:"sub"`
+	}
+
+	if err := idToken.Claims(&claims); err != nil {
+		log.Printf("ERREUR extraction des claims: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"error":   "Erreur claims",
+			"error":   "Erreur d'extraction des informations utilisateur",
 			"details": err.Error(),
 		})
 		return
 	}
 
-	log.Printf("Utilisateur connecté: %+v", user)
+	log.Printf("Claims extraits: %+v", claims)
 
-	// Nettoyer et sauvegarder la session
-	session.Clear()
+	// Créer l'objet utilisateur
+	user := models.User{
+		ID:    claims.Sub,
+		Email: claims.Email,
+		Name:  claims.Name,
+	}
+
+	// Sauvegarder l'utilisateur en session
 	session.Set("user", user)
-
 	if err := session.Save(); err != nil {
-		log.Printf("ERREUR sauvegarde session utilisateur: %v", err)
+		log.Printf("ERREUR sauvegarde utilisateur en session: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"error":   "Erreur sauvegarde session",
+			"error":   "Erreur de sauvegarde de session",
 			"details": err.Error(),
 		})
 		return
 	}
 
-	log.Printf("Session utilisateur sauvegardée avec succès")
+	log.Printf("Utilisateur connecté avec succès: %s", user.Email)
+
+	// Rediriger vers le profil
 	c.Redirect(http.StatusFound, "/profile")
 }

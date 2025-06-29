@@ -15,8 +15,23 @@ var (
 	Oauth2Config *oauth2.Config
 )
 
+// Vérifier si l'OAuth2 est configuré
+func isOAuth2Configured() bool {
+	return Oauth2Config != nil
+}
+
 // Redirection vers login Zitadel
 func LoginHandler(c *gin.Context) {
+	// Vérifier si OAuth2 est configuré
+	if !isOAuth2Configured() {
+		log.Printf("ERREUR: OAuth2Config n'est pas initialisé")
+		c.JSON(http.StatusServiceUnavailable, gin.H{
+			"error":   "Service d'authentification temporairement indisponible",
+			"message": "Le provider OIDC n'est pas accessible. Vérifiez que Zitadel fonctionne.",
+		})
+		return
+	}
+
 	session := sessions.Default(c)
 
 	// Vérifier si l'utilisateur est déjà connecté
@@ -62,18 +77,35 @@ func LoginHandler(c *gin.Context) {
 // Générer un state aléatoire
 func generateRandomState() string {
 	b := make([]byte, 32)
-	rand.Read(b)
+	if _, err := rand.Read(b); err != nil {
+		log.Printf("Erreur génération state: %v", err)
+		// Fallback simple si crypto/rand échoue
+		return "fallback-state-" + base64.StdEncoding.EncodeToString([]byte("simple-fallback"))
+	}
 	return base64.StdEncoding.EncodeToString(b)
 }
 
 // Logout
 func LogoutHandler(c *gin.Context) {
 	session := sessions.Default(c)
+
+	// Log pour debug
+	if user := session.Get("user"); user != nil {
+		log.Printf("Déconnexion de l'utilisateur: %v", user)
+	}
+
 	session.Clear()
-	session.Save()
+	if err := session.Save(); err != nil {
+		log.Printf("Erreur lors de la sauvegarde de session vide: %v", err)
+	}
 
 	// Redirection vers logout Zitadel (optionnel)
-	// logoutURL := "http://localhost:8080/oidc/v1/end_session?post_logout_redirect_uri=http://localhost:3000/"
-	logoutURL := "http://localhost:3000/"
-	c.Redirect(http.StatusFound, logoutURL)
+	// Si OAuth2 est configuré, on peut rediriger vers le logout Zitadel
+	if isOAuth2Configured() {
+		// logoutURL := "http://localhost:8080/oidc/v1/end_session?post_logout_redirect_uri=http://localhost:3000/"
+		logoutURL := "http://localhost:3000/"
+		c.Redirect(http.StatusFound, logoutURL)
+	} else {
+		c.Redirect(http.StatusFound, "http://localhost:3000/")
+	}
 }
