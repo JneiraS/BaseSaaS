@@ -6,15 +6,15 @@
     <link rel="stylesheet" href="/static/css/main.css">
 </head>
 <body>
-    <h1>🚀 Simple Login avec Zitadel</h1>
     
     {{if .user}}
         <p>✅ Vous êtes connecté !</p>
-        {{.profile_button|safe}}  
-        {{.logout_button|safe}}
+        {{.navbar|safe}}
     {{else}}
-        <p>❌ Vous n'êtes pas connecté</p>
-        {{.connexion_button|safe}}
+    {{.navbar|safe}}
     {{end}}
+
+    <h1>🚀 Simple Login avec Zitadel</h1>
+
 </body>
 </html>

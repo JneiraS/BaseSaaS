@@ -1,23 +1,22 @@
 :root {
     --main-color: #333C4F;
     --main-comp-color: #2d3545;
-    --primary-color: #8bbff2;
-    --font-color: #f6f6f6;
-    --font-dark-color: #172029;
+    --primary-color: #BE7C4D;
+    --primary-color-hover: #c58455;
+    --font-color: #FBFFF1;
     --border-color: #3e4756;
-
     --height-navbar: 56px;
 }
 
 a {
-    color: var(--font-dark-color);
+    color: var(--font-color);
 }
 
 * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
-    color: var(--font-dark-color);
+    color: var(--font-color);
     font-family: Lato;
     font-size: 12px;
 }
@@ -32,24 +31,95 @@ a {
     padding: 10px;
     border-bottom: var(--border-color) solid 1px;
     height: var(--height-navbar);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    z-index: 1000;
 }
 
-.navbar a {
-    position: fixed;
-    top: 10px;
-    right: 10px;
-    text-decoration: none;
-    margin-right: 10px;
-}
 
 .navbar .navbar-brand {
-    position: fixed;
-    width: fit-content;
-    top: 10px;
-    left: 10px;
     color: var(--font-color);
     text-decoration: none;
-    margin: 11px 10px;
+    margin: 0;
+}
+
+.ctn-btn {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+/* .ctn-btn .btn {
+    color: var(--font-color);
+    background: var(--primary-color);
+    padding: 8px 16px;
+    text-decoration: none;
+    border-radius: 5px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+    font-size: 11px;
+    border: 1px solid transparent;
+} */
+
+/* .ctn-btn .btn:hover {
+    background: var(--primary-color-hover);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+} */
+
+/* End NavBar */
+
+body {
+    background-color: var(--main-color);
+    position: relative;
+    top: var(--height-navbar);
+    font-family: Arial, sans-serif;
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.btn {
+    background: var(--primary-color);
+    color: var(--font-color);
+    font-weight: 500;
+    padding: 10px 20px;
+    text-decoration: none;
+    border-radius: 5px;
+}
+
+.btn:hover {
+    background: var(--primary-color-hover);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .navbar {
+        padding: 8px;
+    }
+
+    .ctn-btn {
+        gap: 8px;
+    }
+
+    .ctn-btn .btn {
+        font-size: 10px;
+        padding: 6px 12px;
+    }
+}
+
+@media (max-width: 480px) {
+    .ctn-btn {
+        flex-direction: column;
+        gap: 5px;
+    }
+
+    .ctn-btn .btn {
+        font-size: 9px;
+        padding: 5px 10px;
+    }
 }
 
 /* End NavBar */
@@ -66,7 +136,7 @@ body {
 
 .btn {
     background: var(--primary-color);
-    color: var(--font-dark-color);
+    color: var(--font-color);
     font-weight: 500;
     padding: 10px 20px;
     text-decoration: none;
@@ -74,5 +144,5 @@ body {
 }
 
 .btn:hover {
-    background: #0056b3;
+    background: var(--primary-color-hover);
 }

@@ -6,7 +6,19 @@ import (
 	gomh "maragu.dev/gomponents/html"
 )
 
-func NavBar() gom.Node {
+func NavBar(user interface{}) gom.Node {
+	if user != nil {
+		return gomh.Section(
+			gomh.Div(
+				gomh.Class("navbar"),
+				gomh.A(
+					gomh.Class("navbar-brand"),
+					gom.Text("Logo"),
+				),
+				conn_button(),
+			),
+		)
+	}
 	return gomh.Section(
 		gomh.Div(
 			gomh.Class("navbar"),
@@ -14,7 +26,15 @@ func NavBar() gom.Node {
 				gomh.Class("navbar-brand"),
 				gom.Text("Logo"),
 			),
-			elements.Button("Déconnexion", "btn", "/logout"),
+			elements.Button("Connexion", "btn", "/login"),
 		),
+	)
+}
+
+func conn_button() gom.Node {
+	return gomh.Div(
+		gomh.Class("ctn-btn"),
+		elements.Button("Mon profil", "btn", "/profile"),
+		elements.Button("Déconnexion", "btn", "/logout"),
 	)
 }

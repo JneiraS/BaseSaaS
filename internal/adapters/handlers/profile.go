@@ -12,7 +12,7 @@ import (
 func ProfileHandler(c *gin.Context) {
 	session := sessions.Default(c)
 	user := session.Get("user")
-	navbar := components.NavBar()
+	navbar := components.NavBar(user)
 
 	c.HTML(http.StatusOK, "profile.tmpl", gin.H{
 		"title":  "Profil",
