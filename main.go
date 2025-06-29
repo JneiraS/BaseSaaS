@@ -3,6 +3,8 @@ package main
 import (
 	"context"
 	"encoding/gob"
+	"fmt"
+	"html/template"
 	"log"
 	"net/http"
 	"os"
@@ -83,7 +85,7 @@ func initOIDCProvider() {
 	log.Println("✅ Provider OIDC initialisé avec succès")
 }
 
-func main() {
+func SetupServer() *gin.Engine {
 	r := gin.Default()
 
 	// Configuration des sessions
@@ -109,6 +111,25 @@ func main() {
 
 	// Templates
 	r.LoadHTMLGlob("templates/*")
+
+	r.SetFuncMap(template.FuncMap{
+		"safe": func(s any) template.HTML {
+			switch v := s.(type) {
+			case string:
+				return template.HTML(v)
+			case fmt.Stringer:
+				return template.HTML(v.String())
+			default:
+				return template.HTML(fmt.Sprint(v))
+			}
+		},
+	})
+
+	return r
+}
+
+func main() {
+	r := SetupServer()
 
 	// Routes
 	r.GET("/", h.HomeHandler)
