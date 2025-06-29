@@ -2,13 +2,11 @@
 <html>
 <head>
     <title>{{.title}}</title>
-    <style>
-        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
-        .profile { background: #f8f9fa; padding: 20px; border-radius: 10px; margin: 20px 0; }
-        .btn { background: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; }
-    </style>
+    <link rel="stylesheet" href="/static/css/main.css">
+
 </head>
 <body>
+    {{.navbar|safe}}
     <h1>👤 Mon Profil</h1>
     
     <div class="profile">
@@ -18,8 +16,5 @@
         <p><strong>Email:</strong> {{.user.Email}}</p>
         <p><strong>Username:</strong> {{.user.Username}}</p>
     </div>
-    
-    <a href="/" class="btn">Retour à l'accueil</a>
-    <a href="/logout" class="btn">Se déconnecter</a>
 </body>
 </html>

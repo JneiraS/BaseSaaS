@@ -1,23 +1,20 @@
 <!DOCTYPE html>
+
 <html>
 <head>
     <title>{{.title}}</title>
-    <style>
-        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
-        .btn { background: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; }
-        .btn:hover { background: #0056b3; }
-    </style>
+    <link rel="stylesheet" href="/static/css/main.css">
 </head>
 <body>
-    <h1>🚀 Simple Login avec Zitadel</h1>
     
     {{if .user}}
         <p>✅ Vous êtes connecté !</p>
-        <a href="/profile" class="btn">Voir mon profil</a>
-        <a href="/logout" class="btn">Se déconnecter</a>
+        {{.navbar|safe}}
     {{else}}
-        <p>❌ Vous n'êtes pas connecté</p>
-        <a href="/login" class="btn">Se connecter</a>
+    {{.navbar|safe}}
     {{end}}
+
+    <h1>🚀 Simple Login avec Zitadel</h1>
+
 </body>
 </html>
