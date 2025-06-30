@@ -36,7 +36,6 @@ func NavBar(user any) gom.Node {
 func containerButton() gom.Node {
 	return gomh.Div(
 		gomh.Class("dropdown"),
-		gomh.A(gom.Text("Menu ▼")),
 		gomh.Ul(
 			gomh.A(gom.Text("Mon profil"), gom.Attr("href", "/profile")),
 			gomh.A(gom.Text("Mes favoris"), gom.Attr("href", "/favoris")),

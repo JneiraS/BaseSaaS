@@ -87,27 +87,31 @@ body {
 }
 
 .dropdown ul {
-    display: none;
-    position: absolute;
-    background-color: var(--main-comp-color);
-    min-width: 160px;
-    box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);
-    z-index: 1;
-    padding: 0;
+    position: fixed;
+    top: var(--height-navbar);
+    right: -277px;
+    width: 280px;
+    height: 100vh;
+    box-shadow: -2px 0 10px rgba(0, 0, 0, 0.048);
+    z-index: 1000;
+    padding: 60px 0 20px 0;
     margin: 0;
-    border-radius: 5px;
-    border: 1px solid var(--border-color);
+    border-left: 1px solid var(--border-color);
+    transition: right 0.3s ease-in-out;
+    overflow-y: auto;
 }
 
 .dropdown:hover ul {
-    display: block;
+    right: 0;
 }
 
 .dropdown ul a {
     color: var(--font-color);
-    padding: 12px 16px;
+    padding: 16px 24px;
     text-decoration: none;
     display: block;
+    /* border-bottom: 1px solid var(--border-color); */
+    transition: background-color 0.2s ease;
 }
 
 .dropdown ul a:hover {
