@@ -3,11 +3,21 @@
     --main-comp-color: rgb(20, 27, 42);
     --primary-color: #6182a4;
     --primary-color-hover: #53768c;
-    --font-color: #f8f8f8;
+    --font-color: #d4d4d4;
     --font-dark-color: #1d1d1d;
 
     --border-color: #272f3c;
     --height-navbar: 56px;
+}
+
+h1 {
+    font-size: 1.53rem;
+    margin-bottom: 20px;
+}
+
+h2 {
+    font-size: 1.24rem;
+    margin-bottom: 10px;
 }
 
 a {
@@ -20,7 +30,7 @@ a {
     box-sizing: border-box;
     color: var(--font-color);
     font-family: 'Roboto', sans-serif;
-    font-size: .95em;
+    font-size: .95rem;
 }
 
 /* NavBar */
@@ -89,12 +99,12 @@ body {
 .dropdown ul {
     position: fixed;
     top: var(--height-navbar);
-    right: -277px;
-    width: 280px;
+    right: -258px;
+    width: 260px;
     height: 100vh;
     box-shadow: -2px 0 10px rgba(0, 0, 0, 0.048);
     z-index: 1000;
-    padding: 60px 0 20px 0;
+    padding: 40px 0 20px 0;
     margin: 0;
     border-left: 1px solid var(--border-color);
     transition: right 0.3s ease-in-out;
@@ -110,13 +120,14 @@ body {
     padding: 16px 24px;
     text-decoration: none;
     display: block;
-    /* border-bottom: 1px solid var(--border-color); */
-    transition: background-color 0.2s ease;
+    transition: background-color .6s ease;
 }
 
 .dropdown ul a:hover {
     background-color: var(--primary-color);
     color: var(--font-dark-color);
+    transition: background-color 0.2s ease;
+
 }
 
 
