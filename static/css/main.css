@@ -1,12 +1,12 @@
 :root {
-    --main-color: #333C4F;
-    --main-comp-color: #2d3545;
-    --primary-color: #8bbff2;
-    --primary-color-hover: #53668c;
-    --font-color: #FBFFF1;
+    --main-color: #111827;
+    --main-comp-color: rgb(20, 27, 42);
+    --primary-color: #6182a4;
+    --primary-color-hover: #53768c;
+    --font-color: #f8f8f8;
     --font-dark-color: #1d1d1d;
 
-    --border-color: #3e4756;
+    --border-color: #272f3c;
     --height-navbar: 56px;
 }
 
