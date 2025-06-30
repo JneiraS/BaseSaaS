@@ -18,7 +18,7 @@ a {
     box-sizing: border-box;
     color: var(--font-color);
     font-family: 'Roboto', sans-serif;
-    font-size: 1em;
+    font-size: .95em;
 }
 
 /* NavBar */
