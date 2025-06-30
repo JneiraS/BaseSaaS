@@ -1,9 +1,11 @@
 :root {
     --main-color: #333C4F;
     --main-comp-color: #2d3545;
-    --primary-color: #BE7C4D;
-    --primary-color-hover: #c58455;
+    --primary-color: #8bbff2;
+    --primary-color-hover: #53668c;
     --font-color: #FBFFF1;
+    --font-dark-color: #1d1d1d;
+
     --border-color: #3e4756;
     --height-navbar: 56px;
 }
@@ -66,16 +68,16 @@ body {
 }
 
 .btn {
-    background: var(--primary-color);
     color: var(--font-color);
     font-weight: 500;
     padding: 10px 20px;
     text-decoration: none;
     border-radius: 5px;
+    border: var(--border-color) solid 1px;
 }
 
 .btn:hover {
-    background: var(--primary-color-hover);
+    border: var(--font-color) solid 1px;
 }
 
 /* Dropdown Menu */
@@ -110,6 +112,7 @@ body {
 
 .dropdown ul a:hover {
     background-color: var(--primary-color);
+    color: var(--font-dark-color);
 }
 
 
@@ -143,28 +146,7 @@ body {
 
 /* End NavBar */
 
-body {
-    background-color: var(--main-color);
-    position: relative;
-    top: var(--height-navbar);
-    font-family: Arial, sans-serif;
-    max-width: 800px;
-    margin: 0 auto;
-    padding: 20px;
-}
 
-.btn {
-    background: var(--primary-color);
-    color: var(--font-color);
-    font-weight: 500;
-    padding: 10px 20px;
-    text-decoration: none;
-    border-radius: 5px;
-}
-
-.btn:hover {
-    background: var(--primary-color-hover);
-}
 
 /* <div class="profile">
 <h2>Informations utilisateur</h2>
