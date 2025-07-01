@@ -6,7 +6,7 @@ import (
 	gomh "maragu.dev/gomponents/html"
 )
 
-func NavBar(user any) gom.Node {
+func NavBar(user any, csrfToken string) gom.Node {
 	logoElement := gomh.A(
 		gomh.Class("navbar-brand"),
 		gom.Text("🚀"),
@@ -19,7 +19,7 @@ func NavBar(user any) gom.Node {
 			gomh.Div(
 				gomh.Class("ctn-btn"),
 				containerButton(),
-				elements.Button("Déconnexion", "btn", "/logout"),
+				logoutForm(csrfToken),
 			),
 		)
 	}
@@ -30,6 +30,15 @@ func NavBar(user any) gom.Node {
 			gomh.Class("ctn-btn"),
 			elements.Button("Connexion", "btn", "/login"),
 		),
+	)
+}
+
+func logoutForm(csrfToken string) gom.Node {
+	return gomh.Form(
+		gomh.Action("/logout"),
+		gomh.Method("POST"),
+		gomh.Input(gomh.Type("hidden"), gomh.Name("_csrf"), gomh.Value(csrfToken)),
+		gomh.Button(gomh.Type("submit"), gom.Text("Déconnexion"), gomh.Class("btn")),
 	)
 }
 

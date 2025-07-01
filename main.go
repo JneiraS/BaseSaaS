@@ -11,11 +11,13 @@ import (
 	"time"
 
 	h "github.com/JneiraS/BaseSasS/internal/adapters/handlers"
+	"github.com/JneiraS/BaseSasS/internal/adapters/middleware"
 	"github.com/JneiraS/BaseSasS/internal/domain/models"
 	"github.com/JneiraS/BaseSasS/internal/services"
 	"github.com/coreos/go-oidc/v3/oidc"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/cookie"
+	csrf "github.com/utrack/gin-csrf"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 	"golang.org/x/oauth2"
@@ -72,6 +74,9 @@ func (app *App) initOIDCProvider() error {
 func (app *App) setupServer() *gin.Engine {
 	r := gin.Default()
 
+	// Appliquer le middleware de sécurité en premier
+	r.Use(middleware.SecurityHeaders())
+
 	secretKey := []byte(os.Getenv("SESSION_SECRET"))
 	if len(secretKey) == 0 {
 		secretKey = []byte("ma-cle-secrete-de-32-caracteres-minimum-pour-securite")
@@ -87,6 +92,7 @@ func (app *App) setupServer() *gin.Engine {
 	})
 
 	r.Use(sessions.Sessions("mysession", store))
+	r.Use(middleware.CSRFProtection())
 
 	r.SetFuncMap(template.FuncMap{
 		"safe": func(s any) template.HTML {
@@ -112,7 +118,7 @@ func (app *App) setupRoutes(r *gin.Engine) {
 
 	if app.authService != nil {
 		r.GET("/login", app.authHandlers.LoginHandler)
-		r.GET("/logout", app.authHandlers.LogoutHandler)
+		r.POST("/logout", app.authHandlers.LogoutHandler)
 		r.GET("/callback", app.authHandlers.CallbackHandler)
 	}
 
@@ -122,6 +128,12 @@ func (app *App) setupRoutes(r *gin.Engine) {
 			"auth_service": app.authService != nil,
 		}
 		c.JSON(http.StatusOK, status)
+	})
+
+	// Middleware pour ajouter le token CSRF au contexte du template
+	r.Use(func(c *gin.Context) {
+		c.Set("csrf_token", csrf.GetToken(c))
+		c.Next()
 	})
 }
 
