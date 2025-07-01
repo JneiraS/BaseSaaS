@@ -7,20 +7,24 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/JneiraS/BaseSasS/internal/database"
 	"github.com/JneiraS/BaseSasS/internal/domain/models"
 	"github.com/JneiraS/BaseSasS/internal/services"
 	"github.com/coreos/go-oidc/v3/oidc"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 type AuthHandlers struct {
 	authService *services.AuthService
+	db          *gorm.DB
 }
 
 func NewAuthHandlers(authService *services.AuthService) *AuthHandlers {
 	return &AuthHandlers{
 		authService: authService,
+		db:          database.DB,
 	}
 }
 
@@ -72,7 +76,6 @@ func (h *AuthHandlers) CallbackHandler(c *gin.Context) {
 
 	savedState := session.Get("state")
 	if savedState == nil || state != savedState.(string) {
-		log.Printf("ERREUR: State invalide")
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": "State invalide",
 		})
@@ -87,6 +90,7 @@ func (h *AuthHandlers) CallbackHandler(c *gin.Context) {
 		log.Printf("ERREUR échange de code: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "Erreur lors de l'échange du code",
+			"details": err.Error(), // Ajout de cette ligne pour les détails de l'erreur
 		})
 		return
 	}
@@ -124,10 +128,44 @@ func (h *AuthHandlers) CallbackHandler(c *gin.Context) {
 		return
 	}
 
-	user := models.User{
-		ID:    claims.Sub,
-		Email: claims.Email,
-		Name:  claims.Name,
+	// Rechercher l'utilisateur par son OIDCID (Sub)
+	var user models.User
+	result := h.db.Where("oidc_id = ?", claims.Sub).First(&user)
+
+	if result.Error == gorm.ErrRecordNotFound {
+		// L'utilisateur n'existe pas, le créer
+		user = models.User{
+			OIDCID:   claims.Sub,
+			Email:    claims.Email,
+			Name:     claims.Name,
+			Username: claims.Sub, // Ou claims.PreferredUsername si disponible
+		}
+		if createResult := h.db.Create(&user); createResult.Error != nil {
+			log.Printf("ERREUR création utilisateur: %v", createResult.Error)
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": "Erreur lors de la création de l'utilisateur",
+			})
+			return
+		}
+	} else if result.Error != nil {
+		// Erreur lors de la recherche
+		log.Printf("ERREUR recherche utilisateur: %v", result.Error)
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Erreur lors de la recherche de l'utilisateur",
+		})
+		return
+	} else {
+		// L'utilisateur existe, mettre à jour ses informations si nécessaire
+		user.Email = claims.Email
+		user.Name = claims.Name
+		user.Username = claims.Sub // Ou claims.PreferredUsername si disponible
+		if updateResult := h.db.Save(&user); updateResult.Error != nil {
+			log.Printf("ERREUR mise à jour utilisateur: %v", updateResult.Error)
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": "Erreur lors de la mise à jour de l'utilisateur",
+			})
+			return
+		}
 	}
 
 	session.Set("user", user)

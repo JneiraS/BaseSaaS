@@ -12,20 +12,23 @@ import (
 
 	h "github.com/JneiraS/BaseSasS/internal/adapters/handlers"
 	"github.com/JneiraS/BaseSasS/internal/adapters/middleware"
+	"github.com/JneiraS/BaseSasS/internal/database"
 	"github.com/JneiraS/BaseSasS/internal/domain/models"
 	"github.com/JneiraS/BaseSasS/internal/services"
 	"github.com/coreos/go-oidc/v3/oidc"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/cookie"
-	csrf "github.com/utrack/gin-csrf"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
+	csrf "github.com/utrack/gin-csrf"
 	"golang.org/x/oauth2"
+	"gorm.io/gorm"
 )
 
 type App struct {
 	authService  *services.AuthService
 	authHandlers *h.AuthHandlers
+	db           *gorm.DB
 }
 
 func LoadEnv() error {
@@ -161,6 +164,19 @@ func main() {
 	if err := app.initOIDCProvider(); err != nil {
 		log.Printf("AVERTISSEMENT: Authentification indisponible: %v", err)
 	}
+
+	// Initialiser la base de données AVANT de créer les gestionnaires qui en dépendent
+	database.InitDatabase()
+	app.db = database.DB
+
+	// Migrer le schéma de la base de données
+	if err := app.db.AutoMigrate(&models.User{}); err != nil {
+		log.Fatalf("Failed to migrate database: %v", err)
+	}
+	log.Println("Database migration completed.")
+
+	// Créer les gestionnaires APRÈS l'initialisation de la base de données
+	app.authHandlers = h.NewAuthHandlers(app.authService)
 
 	r := app.setupServer()
 	app.setupRoutes(r)
