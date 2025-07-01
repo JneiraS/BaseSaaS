@@ -91,7 +91,7 @@ body {
 }
 
 .btn:hover {
-    border: var(--font-color) solid 1px;
+    border: #ffffff58 solid 1px;
 }
 
 /* Dropdown Menu */
@@ -166,6 +166,10 @@ body {
 /* End NavBar */
 
 /* Profile Form Styles */
+.profile-form h2 {
+    margin-bottom: 20px;
+}
+
 .profile-form {
     margin-top: 30px;
     padding: 20px;
@@ -228,4 +232,12 @@ body {
     background-color: var(--primary-color-hover);
     border-color: var(--primary-color-hover);
     color: var(--font-dark-color);
+}
+
+#name,
+#email {
+    color: #3c3f48;
+    border: none;
+    pointer-events: none;
+    cursor: default;
 }

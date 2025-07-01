@@ -7,12 +7,9 @@
 </head>
 <body>
     {{.navbar|safe}}
-    <h1>👤 Mon Profil</h1>
-    <p><strong>Nom:</strong> {{.user.Name}}</p>
-    <p><strong>Email:</strong> {{.user.Email}}</p>
 
-    <h2>Modifier mon profil</h2>
     <form action="/profile/update" method="POST" class="profile-form">
+        <h2>Mon profil</h2>
         <input type="hidden" name="_csrf" value="{{.csrf_token}}">
         <div class="form-group">
             <label for="name" class="form-label">Nom:</label>

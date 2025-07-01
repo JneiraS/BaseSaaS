@@ -60,8 +60,6 @@ func (ps *ProfileService) UpdateUser(userID uint, updatedData models.User) (*mod
 		}
 
 		// Mettre à jour uniquement les champs modifiables
-		user.Name = strings.TrimSpace(updatedData.Name)
-		user.Email = strings.TrimSpace(updatedData.Email)
 		user.Username = strings.TrimSpace(updatedData.Username)
 
 		// Sauvegarder les modifications

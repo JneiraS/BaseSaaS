@@ -183,15 +183,24 @@ func (h *AuthHandlers) CallbackHandler(c *gin.Context) {
 func (h *AuthHandlers) LogoutHandler(c *gin.Context) {
 	session := sessions.Default(c)
 
+	// Log utilisateur avant suppression
 	if user := session.Get("user"); user != nil {
 		log.Printf("Déconnexion de l'utilisateur: %v", user)
 	}
 
+	// Supprimer les données de session
 	session.Clear()
+
+	// Sauvegarder la session vide
 	if err := session.Save(); err != nil {
 		log.Printf("Erreur lors de la sauvegarde de session vide: %v", err)
 	}
 
+	// Supprimer le cookie manuellement (optionnel si Save le fait déjà)
+	cookieName := "session" // Nom du cookie utilisé par votre store
+	c.SetCookie(cookieName, "", -1, "/", "localhost", false, true)
+
+	// Rediriger l'utilisateur
 	c.Redirect(http.StatusFound, "http://localhost:3000/")
 }
 
