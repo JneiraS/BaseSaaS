@@ -135,10 +135,10 @@ func (h *AuthHandlers) CallbackHandler(c *gin.Context) {
 	if result.Error == gorm.ErrRecordNotFound {
 		// L'utilisateur n'existe pas, le créer
 		user = models.User{
-			OIDCID:   claims.Sub,
-			Email:    claims.Email,
-			Name:     claims.Name,
-			Username: claims.Sub, // Ou claims.PreferredUsername si disponible
+			OIDCID: claims.Sub,
+			Email:  claims.Email,
+			Name:   claims.Name,
+			// Username: claims.Sub, // Ou claims.PreferredUsername si disponible
 		}
 		if createResult := h.db.Create(&user); createResult.Error != nil {
 			log.Printf("ERREUR création utilisateur: %v", createResult.Error)
@@ -158,7 +158,7 @@ func (h *AuthHandlers) CallbackHandler(c *gin.Context) {
 		// L'utilisateur existe, mettre à jour ses informations si nécessaire
 		user.Email = claims.Email
 		user.Name = claims.Name
-		user.Username = claims.Sub // Ou claims.PreferredUsername si disponible
+		// user.Username = claims.Sub // Ou claims.PreferredUsername si disponible
 		if updateResult := h.db.Save(&user); updateResult.Error != nil {
 			log.Printf("ERREUR mise à jour utilisateur: %v", updateResult.Error)
 			c.JSON(http.StatusInternalServerError, gin.H{

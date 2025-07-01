@@ -11,5 +11,5 @@ type User struct {
 	OIDCID   string `json:"id" gorm:"column:oidc_id;uniqueIndex"` // L'ID de l'utilisateur provenant d'OIDC
 	Email    string `json:"email" form:"email"`
 	Name     string `json:"name" form:"name"`
-	Username string `json:"preferred_username"`
+	Username string `json:"username" form:"username"`
 }
