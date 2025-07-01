@@ -79,6 +79,7 @@ body {
 
 .btn {
     color: var(--font-color);
+    background-color: transparent;
     font-weight: 500;
     padding: 10px 20px;
     text-decoration: none;
@@ -120,7 +121,7 @@ body {
     padding: 16px 24px;
     text-decoration: none;
     display: block;
-    transition: background-color .6s ease;
+    transition: background-color .1s ease;
 }
 
 .dropdown ul a:hover {
