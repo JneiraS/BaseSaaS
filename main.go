@@ -118,6 +118,7 @@ func (app *App) setupServer() *gin.Engine {
 func (app *App) setupRoutes(r *gin.Engine) {
 	r.GET("/", h.HomeHandler)
 	r.GET("/profile", app.authRequired(), h.ProfileHandler)
+	r.POST("/profile/update", app.authRequired(), h.UpdateProfileHandler)
 
 	if app.authService != nil {
 		r.GET("/login", app.authHandlers.LoginHandler)
