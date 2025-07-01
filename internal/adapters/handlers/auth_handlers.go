@@ -89,7 +89,7 @@ func (h *AuthHandlers) CallbackHandler(c *gin.Context) {
 	if err != nil {
 		log.Printf("ERREUR échange de code: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Erreur lors de l'échange du code",
+			"error":   "Erreur lors de l'échange du code",
 			"details": err.Error(), // Ajout de cette ligne pour les détails de l'erreur
 		})
 		return
