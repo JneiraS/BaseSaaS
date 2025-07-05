@@ -144,7 +144,8 @@ func (app *App) setupServer() *gin.Engine {
 
 // setupRoutes définit toutes les routes de l'application.
 func (app *App) setupRoutes(r *gin.Engine) {
-	r.GET("/", HomeHandler)
+	r.GET("/", app.LandingPage)
+	r.GET("/home", HomeHandler)
 	r.GET("/profile", app.authRequired(), ProfileHandler)
 	r.POST("/profile/update", app.authRequired(), UpdateProfileHandler)
 

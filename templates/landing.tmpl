@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gérez Votre Association Facilement</title>
+    <link rel="stylesheet" href="/static/css/landing.css">
+    <link rel="stylesheet" href="/static/css/main.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+</head>
+<body>
+
+    {{.navbar|safe}}
+
+    <main>
+        <section class="hero">
+            <div class="container">
+                <h1>Gérez Votre Association Facilement et Efficacement</h1>
+                <p>Simplifiez la gestion de vos membres, événements et communications avec notre plateforme intuitive.</p>
+                <a href="/login" class="cta-button">Commencez Gratuitement</a>
+            </div>
+        </section>
+
+        <section class="features">
+            <div class="container">
+                <div class="features-grid">
+                    <div class="feature-card">
+                        <div class="icon">👥</div>
+                        <h3>Gestion des Membres</h3>
+                        <p>Suivez les adhésions, les cotisations et les informations de contact de tous vos membres.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="icon">📅</div>
+                        <h3>Planification d'Événements</h3>
+                        <p>Créez, organisez et gérez les inscriptions à tous vos événements associatifs.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="icon">📣</div>
+                        <h3>Communication Simplifiée</h3>
+                        <p>Envoyez des newsletters, des annonces et communiquez facilement avec vos membres.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2025 Gestion Associations. Tous droits réservés.</p>
+        </div>
+    </footer>
+
+</body>
+</html>
