@@ -119,7 +119,8 @@ func (app *App) setupServer() *gin.Engine {
 	})
 
 	r.Use(sessions.Sessions(app.cfg.CookieName, store))
-	r.Use(middleware.CSRFProtection(app.cfg))
+		r.Use(middleware.CSRFProtection(app.cfg))
+	r.Use(middleware.ContextInjector())
 
 	// Permet d'utiliser `{{ safe .variable }}` dans les templates pour afficher du HTML.
 	r.SetFuncMap(template.FuncMap{

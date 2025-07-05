@@ -31,7 +31,7 @@ func NewAuthHandlers(authService *services.AuthService, cfg *config.Config) *Aut
 func (h *AuthHandlers) LoginHandler(c *gin.Context) {
 	
 
-	session := sessions.Default(c)
+	session := c.MustGet("session").(sessions.Session)
 
 	if user := session.Get("user"); user != nil {
 		log.Printf("Utilisateur déjà connecté, redirection vers profile")
@@ -62,7 +62,7 @@ func (h *AuthHandlers) LoginHandler(c *gin.Context) {
 }
 
 func (h *AuthHandlers) CallbackHandler(c *gin.Context) {
-	session := sessions.Default(c)
+	session := c.MustGet("session").(sessions.Session)
 	code := c.Query("code")
 	state := c.Query("state")
 
@@ -164,7 +164,7 @@ func (h *AuthHandlers) verifyIDTokenAndExtractClaims(ctx context.Context, token 
 }
 
 func (h *AuthHandlers) LogoutHandler(c *gin.Context) {
-	session := sessions.Default(c)
+	session := c.MustGet("session").(sessions.Session)
 
 	// Log utilisateur avant suppression
 	if user := session.Get("user"); user != nil {

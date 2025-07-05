@@ -12,7 +12,6 @@ import (
 	"github.com/JneiraS/BaseSasS/internal/domain/repositories"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
-	csrf "github.com/utrack/gin-csrf"
 )
 
 // ProfileService encapsule la logique métier pour les profils utilisateur
@@ -67,14 +66,14 @@ func (ps *ProfileService) UpdateUser(userID uint, updatedData models.User) (*mod
 
 // Page profil (protégée)
 func (app *App) ProfileHandler(c *gin.Context) {
-	session := sessions.Default(c)
+	session := c.MustGet("session").(sessions.Session)
 	user, ok := session.Get("user").(models.User)
 	if !ok {
 		// Si l'utilisateur n'est pas en session ou n'est pas du bon type, rediriger vers la connexion
 		c.Redirect(http.StatusFound, "/login")
 		return
 	}
-	csrfToken := csrf.GetToken(c)
+	csrfToken := c.MustGet("csrf_token").(string)
 	navbar := components.NavBar(user, csrfToken)
 
 	c.HTML(http.StatusOK, "profile.tmpl", gin.H{
@@ -87,7 +86,7 @@ func (app *App) ProfileHandler(c *gin.Context) {
 
 // UpdateProfileHandler gère la mise à jour du profil utilisateur (version améliorée)
 func (app *App) UpdateProfileHandler(c *gin.Context) {
-	session := sessions.Default(c)
+	session := c.MustGet("session").(sessions.Session)
 	loggedInUser, ok := session.Get("user").(models.User)
 	if !ok {
 		log.Printf("DEBUG: Utilisateur non trouvé en session ou typage incorrect.")
