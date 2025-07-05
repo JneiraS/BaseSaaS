@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/base64"
+	"fmt"
 	"log"
 	"net/http"
 
@@ -34,7 +35,14 @@ func (h *AuthHandlers) LoginHandler(c *gin.Context) {
 		return
 	}
 
-	state := generateRandomState()
+	state, err := generateRandomState()
+	if err != nil {
+		log.Printf("ERREUR génération de l'état: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Erreur interne du serveur",
+		})
+		return
+	}
 	session.Set("state", state)
 
 	if err := session.Save(); err != nil {
@@ -72,7 +80,6 @@ func (h *AuthHandlers) CallbackHandler(c *gin.Context) {
 		log.Printf("ERREUR échange de code: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error":   "Erreur lors de l'échange du code",
-			"details": err.Error(), // Ajout de cette ligne pour les détails de l'erreur
 		})
 		return
 	}
@@ -155,10 +162,10 @@ func (h *AuthHandlers) LogoutHandler(c *gin.Context) {
 	c.Redirect(http.StatusFound, "http://localhost:3000/")
 }
 
-func generateRandomState() string {
+func generateRandomState() (string, error) {
 	b := make([]byte, 32)
 	if _, err := rand.Read(b); err != nil {
-		return "fallback-state-" + base64.StdEncoding.EncodeToString([]byte("simple-fallback"))
+		return "", fmt.Errorf("failed to generate random state: %w", err)
 	}
-	return base64.StdEncoding.EncodeToString(b)
+	return base64.StdEncoding.EncodeToString(b), nil
 }
