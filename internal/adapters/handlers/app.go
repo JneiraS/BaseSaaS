@@ -151,9 +151,9 @@ func (app *App) setupRoutes(r *gin.Engine) {
 
 	// Les routes d'authentification ne sont actives que si le service OIDC est configuré.
 	if app.authService != nil {
-		r.GET("/login", app.authHandlers.LoginHandler)
-		r.POST("/logout", app.authHandlers.LogoutHandler)
-		r.GET("//callback", app.authHandlers.CallbackHandler)
+		r.GET("/login", middleware.AuthConfigured(app.authService), app.authHandlers.LoginHandler)
+		r.POST("/logout", middleware.AuthConfigured(app.authService), app.authHandlers.LogoutHandler)
+		r.GET("//callback", middleware.AuthConfigured(app.authService), app.authHandlers.CallbackHandler)
 	}
 
 	r.GET("/health", func(c *gin.Context) {

@@ -24,14 +24,7 @@ func NewAuthHandlers(authService *services.AuthService) *AuthHandlers {
 }
 
 func (h *AuthHandlers) LoginHandler(c *gin.Context) {
-	if !h.authService.IsConfigured() {
-		log.Printf("ERREUR: AuthService n'est pas configuré")
-		c.JSON(http.StatusServiceUnavailable, gin.H{
-			"error":   "Service d'authentification temporairement indisponible",
-			"message": "Le provider OIDC n'est pas accessible. Vérifiez que Zitadel fonctionne.",
-		})
-		return
-	}
+	
 
 	session := sessions.Default(c)
 
@@ -57,13 +50,7 @@ func (h *AuthHandlers) LoginHandler(c *gin.Context) {
 }
 
 func (h *AuthHandlers) CallbackHandler(c *gin.Context) {
-	if !h.authService.IsConfigured() {
-		log.Printf("ERREUR: AuthService non configuré")
-		c.JSON(http.StatusServiceUnavailable, gin.H{
-			"error": "Service d'authentification non disponible",
-		})
-		return
-	}
+	
 
 	session := sessions.Default(c)
 	code := c.Query("code")
