@@ -9,20 +9,20 @@ import (
 
 	"github.com/JneiraS/BaseSasS/components"
 	"github.com/JneiraS/BaseSasS/internal/domain/models"
+	"github.com/JneiraS/BaseSasS/internal/domain/repositories"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 	csrf "github.com/utrack/gin-csrf"
-	"gorm.io/gorm"
 )
 
 // ProfileService encapsule la logique métier pour les profils utilisateur
 type ProfileService struct {
-	db *gorm.DB
+	userRepo repositories.UserRepository
 }
 
 // NewProfileService crée une nouvelle instance du service profil
-func NewProfileService(db *gorm.DB) *ProfileService {
-	return &ProfileService{db: db}
+func NewProfileService(userRepo repositories.UserRepository) *ProfileService {
+	return &ProfileService{userRepo: userRepo}
 }
 
 // validateUserInput valide les données utilisateur
@@ -49,37 +49,20 @@ func (ps *ProfileService) UpdateUser(userID uint, updatedData models.User) (*mod
 		return nil, err
 	}
 
-	var user models.User
-
-	// Utilisation d'une transaction pour garantir la cohérence
-	err := ps.db.Transaction(func(tx *gorm.DB) error {
-		// Récupérer l'utilisateur existant
-		if err := tx.First(&user, userID).Error; err != nil {
-			return fmt.Errorf("utilisateur non trouvé: %w", err)
-		}
-
-		// Mettre à jour uniquement les champs modifiables
-		user.Username = strings.TrimSpace(updatedData.Username)
-
-		// Sauvegarder les modifications
-		result := tx.Save(&user)
-		if result.Error != nil {
-			return fmt.Errorf("erreur lors de la sauvegarde: %w", result.Error)
-		}
-
-		// Vérifier qu'exactement une ligne a été affectée
-		if result.RowsAffected != 1 {
-			return fmt.Errorf("nombre de lignes affectées inattendu: %d", result.RowsAffected)
-		}
-
-		return nil
-	})
-
+	user, err := ps.userRepo.FindUserByID(userID)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("utilisateur non trouvé: %w", err)
 	}
 
-	return &user, nil
+	// Mettre à jour uniquement les champs modifiables
+	user.Username = strings.TrimSpace(updatedData.Username)
+
+	// Sauvegarder les modifications
+	if err := ps.userRepo.UpdateUser(user); err != nil {
+		return nil, fmt.Errorf("erreur lors de la sauvegarde: %w", err)
+	}
+
+	return user, nil
 }
 
 // Page profil (protégée)
@@ -115,7 +98,6 @@ func (app *App) UpdateProfileHandler(c *gin.Context) {
 	var updatedUser models.User
 	if err := c.ShouldBind(&updatedUser); err != nil {
 		log.Printf("ERREUR: Erreur de binding du formulaire: %v", err)
-		// ps := NewProfileService(database.DB) // Old way
 		app.handleProfileError(c, session, "Erreur lors de la lecture des données du formulaire.")
 		return
 	}
@@ -123,7 +105,7 @@ func (app *App) UpdateProfileHandler(c *gin.Context) {
 	log.Printf("DEBUG: Données reçues du formulaire - Nom: %s, Email: %s", updatedUser.Name, updatedUser.Email)
 
 	// Utiliser le service pour mettre à jour l'utilisateur
-	profileService := NewProfileService(app.db)
+	profileService := NewProfileService(repositories.NewGormUserRepository(app.db))
 	updatedUserFromDB, err := profileService.UpdateUser(loggedInUser.ID, updatedUser)
 	if err != nil {
 		log.Printf("ERREUR: Erreur lors de la mise à jour du profil: %v", err)

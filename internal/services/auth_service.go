@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/JneiraS/BaseSasS/internal/domain/models"
+	"github.com/JneiraS/BaseSasS/internal/domain/repositories"
 	"github.com/coreos/go-oidc/v3/oidc"
 	"golang.org/x/oauth2"
 	"gorm.io/gorm"
@@ -12,14 +13,14 @@ import (
 type AuthService struct {
 	Provider     *oidc.Provider
 	Oauth2Config *oauth2.Config
-	db           *gorm.DB
+	userRepo     repositories.UserRepository
 }
 
-func NewAuthService(provider *oidc.Provider, config *oauth2.Config, db *gorm.DB) *AuthService {
+func NewAuthService(provider *oidc.Provider, config *oauth2.Config, userRepo repositories.UserRepository) *AuthService {
 	return &AuthService{
 		Provider:     provider,
 		Oauth2Config: config,
-		db:           db,
+		userRepo:     userRepo,
 	}
 }
 
@@ -34,32 +35,32 @@ func (s *AuthService) FindOrCreateUserFromClaims(claims struct {
 	Name  string `json:"name"`
 	Sub   string `json:"sub"`
 }) (*models.User, error) {
-	var user models.User
-	result := s.db.Where("oidc_id = ?", claims.Sub).First(&user)
+	user, err := s.userRepo.FindUserByOIDCID(claims.Sub)
 
-	if result.Error == gorm.ErrRecordNotFound {
+	if err == gorm.ErrRecordNotFound {
 		// L'utilisateur n'existe pas, le créer
-		user = models.User{
+		newUser := &models.User{
 			OIDCID:         claims.Sub,
 			Email:          claims.Email,
 			Name:           claims.Name,
 			LastConnection: time.Now(),
 		}
-		if createResult := s.db.Create(&user); createResult.Error != nil {
-			return nil, createResult.Error
+		if createErr := s.userRepo.CreateUser(newUser); createErr != nil {
+			return nil, createErr
 		}
-	} else if result.Error != nil {
+		return newUser, nil
+	} else if err != nil {
 		// Erreur lors de la recherche
-		return nil, result.Error
+		return nil, err
 	} else {
 		// L'utilisateur existe, mettre à jour ses informations si nécessaire
 		user.Email = claims.Email
 		user.Name = claims.Name
 		user.LastConnection = time.Now()
 
-		if updateResult := s.db.Save(&user); updateResult.Error != nil {
-			return nil, updateResult.Error
+		if updateErr := s.userRepo.UpdateUser(user); updateErr != nil {
+			return nil, updateErr
 		}
+		return user, nil
 	}
-	return &user, nil
 }

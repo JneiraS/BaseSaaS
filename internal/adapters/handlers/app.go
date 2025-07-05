@@ -12,6 +12,7 @@ import (
 	"github.com/JneiraS/BaseSasS/internal/config"
 	"github.com/JneiraS/BaseSasS/internal/database"
 	"github.com/JneiraS/BaseSasS/internal/domain/models"
+	"github.com/JneiraS/BaseSasS/internal/domain/repositories"
 	"github.com/JneiraS/BaseSasS/internal/services"
 	"github.com/coreos/go-oidc/v3/oidc"
 	"github.com/gin-contrib/sessions"
@@ -29,6 +30,7 @@ type App struct {
 	db           *gorm.DB
 	router       *gin.Engine
 	cfg          *config.Config
+	userRepo     repositories.UserRepository
 }
 
 // NewApp crée et initialise une nouvelle instance de l'application.
@@ -47,6 +49,8 @@ func NewApp() (*App, error) {
 	}
 	app.db = db
 	log.Println("Database connection established.")
+
+	app.userRepo = repositories.NewGormUserRepository(app.db)
 
 	// L'authentification est optionnelle, le serveur peut démarrer sans.
 	if err := app.initOIDCProvider(); err != nil {
@@ -93,7 +97,7 @@ func (app *App) initOIDCProvider() error {
 		Scopes:       []string{oidc.ScopeOpenID, "profile", "email"},
 	}
 
-	app.authService = services.NewAuthService(provider, oauth2Config, app.db)
+	app.authService = services.NewAuthService(provider, oauth2Config, app.userRepo)
 
 	return nil
 }
