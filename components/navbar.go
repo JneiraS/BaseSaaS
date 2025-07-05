@@ -12,7 +12,8 @@ func NavBar(user any, csrfToken string) gom.Node {
 		gom.Text("🚀"),
 	)
 
-	themeSwitcher := elements.Button("Changer de thème", "btn", "#", gom.Attr("id", "theme-switcher"))
+	// themeSwitcher := elements.Button("Changer de thème", "btn", "#", gom.Attr("id", "theme-switcher"))
+	themeSwitcher := gomh.I(gomh.Class("fa-solid fa-lightbulb"), gom.Attr("id", "theme-switcher"))
 
 	if user != nil {
 		return gomh.Section(
@@ -20,9 +21,9 @@ func NavBar(user any, csrfToken string) gom.Node {
 			logoElement,
 			gomh.Div(
 				gomh.Class("ctn-btn"),
-				themeSwitcher,
 				containerButton(),
 				logoutForm(csrfToken),
+				themeSwitcher,
 			),
 		)
 	}
@@ -31,8 +32,8 @@ func NavBar(user any, csrfToken string) gom.Node {
 		logoElement,
 		gomh.Div(
 			gomh.Class("ctn-btn"),
-			themeSwitcher,
 			elements.Button("Connexion", "btn", "/login"),
+			themeSwitcher,
 		),
 	)
 }
