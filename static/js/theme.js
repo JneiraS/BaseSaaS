@@ -18,3 +18,12 @@ themeSwitcher.addEventListener('click', (e) => {
 // Set initial theme on page load
 const savedTheme = localStorage.getItem('theme') || 'dark';
 setTheme(savedTheme);
+
+// Add scroll effect to navbar
+window.addEventListener('scroll', () => {
+    if (window.scrollY > 0) {
+        document.body.classList.add('scrolled');
+    } else {
+        document.body.classList.remove('scrolled');
+    }
+});

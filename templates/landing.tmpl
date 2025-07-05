@@ -17,17 +17,17 @@
     {{.navbar|safe}}
 
     <main>
-        <section class="hero-section">
+        <section class="hero-section scroll-animate">
             <div class="container">
                 <div class="hero-content">
                     <h1>Gérez Votre Association Facilement et Efficacement</h1>
                     <p class="subtitle">Simplifiez la gestion de vos membres, événements et communications avec notre plateforme intuitive.</p>
-                    <a href="/login" class="btn btn-primary hero-cta">Commencez Gratuitement</a>
+                    <a href="/login" class="btn btn-primary hero-cta">Connectez-vous / Inscrivez-vous</a>
                 </div>
             </div>
         </section>
 
-        <section class="features-section">
+        <section class="features-section scroll-animate">
             <div class="container">
                 <h2 class="section-title">Fonctionnalités Clés</h2>
                 <div class="features-grid">
@@ -61,15 +61,45 @@
                         <h3>Accès Cloud Sécurisé</h3>
                         <p>Accédez à vos données de n'importe où, en toute sécurité, avec notre plateforme cloud.</p>
                     </div>
+                    <div class="feature-card">
+                        <div class="icon-wrapper"><i class="fas fa-folder-open"></i></div>
+                        <h3>Gestion des Documents</h3>
+                        <p>Centralisez et partagez tous les documents importants de votre association en toute sécurité.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="icon-wrapper"><i class="fas fa-poll"></i></div>
+                        <h3>Système de Vote & Sondage</h3>
+                        <p>Organisez des votes et des sondages pour impliquer vos membres dans les décisions clés.</p>
+                    </div>
                 </div>
             </div>
         </section>
 
-        <section class="cta-section">
+        <section class="testimonials-section scroll-animate">
+            <div class="container">
+                <h2 class="section-title">Ce que disent nos utilisateurs</h2>
+                <div class="testimonials-grid">
+                    <div class="testimonial-card">
+                        <p>"Grâce à cette plateforme, la gestion de notre association est devenue un jeu d'enfant. Un gain de temps incroyable !"</p>
+                        <p class="testimonial-author">- Marie Dubois, Présidente de "Les Amis du Quartier"</p>
+                    </div>
+                    <div class="testimonial-card">
+                        <p>"Simple, efficace et complet. Tous nos membres sont ravis de la facilité avec laquelle ils peuvent suivre les événements."</p>
+                        <p class="testimonial-author">- Jean Dupont, Secrétaire de "Club Sportif Local"</p>
+                    </div>
+                    <div class="testimonial-card">
+                        <p>"Un outil indispensable pour toute association moderne. Le support est également très réactif."</p>
+                        <p class="testimonial-author">- Sophie Martin, Trésorière de "Association Culturelle"</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="cta-section scroll-animate">
             <div class="container">
                 <h2>Prêt à Simplifier la Gestion de Votre Association ?</h2>
                 <p>Rejoignez des centaines d'associations qui nous font déjà confiance.</p>
-                <a href="/login" class="btn btn-secondary cta-button">Commencez Votre Essai Gratuit</a>
+                <a href="/login" class="btn btn-secondary cta-button">Connectez-vous pour commencer</a>
             </div>
         </section>
     </main>
@@ -80,6 +110,7 @@
         </div>
     </footer>
     <script src="/static/js/theme.js"></script>
+    <script src="/static/js/scroll-animations.js"></script>
 
 </body>
 </html>
