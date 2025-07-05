@@ -11,7 +11,6 @@ import (
 	"github.com/JneiraS/BaseSasS/internal/adapters/middleware"
 	"github.com/JneiraS/BaseSasS/internal/config"
 	"github.com/JneiraS/BaseSasS/internal/database"
-	"github.com/JneiraS/BaseSasS/internal/domain/models"
 	"github.com/JneiraS/BaseSasS/internal/domain/repositories"
 	"github.com/JneiraS/BaseSasS/internal/services"
 	"github.com/coreos/go-oidc/v3/oidc"
@@ -60,7 +59,7 @@ func NewApp() (*App, error) {
 		log.Printf("AVERTISSEMENT: Authentification indisponible: %v", err)
 	}
 
-	if err := app.db.AutoMigrate(&models.User{}); err != nil {
+	if err := app.db.AutoMigrate(&repositories.UserDB{}); err != nil {
 		return nil, fmt.Errorf("failed to migrate database: %w", err)
 	}
 	log.Println("Database migration completed.")

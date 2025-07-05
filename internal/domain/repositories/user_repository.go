@@ -1,9 +1,21 @@
 package repositories
 
 import (
+	"time"
+
 	"github.com/JneiraS/BaseSasS/internal/domain/models"
 	"gorm.io/gorm"
 )
+
+// UserDB représente le modèle utilisateur pour la persistance GORM.
+type UserDB struct {
+	gorm.Model
+	OIDCID         string    `gorm:"column:oidc_id;uniqueIndex"`
+	Email          string
+	Name           string
+	Username       string
+	LastConnection time.Time
+}
 
 // UserRepository définit l'interface pour les opérations de persistance des utilisateurs.
 type UserRepository interface {
@@ -25,30 +37,73 @@ func NewGormUserRepository(db *gorm.DB) *GormUserRepository {
 
 // FindUserByOIDCID recherche un utilisateur par son OIDCID.
 func (r *GormUserRepository) FindUserByOIDCID(oidcID string) (*models.User, error) {
-	var user models.User
-	result := r.db.Where("oidc_id = ?", oidcID).First(&user)
+	var userDB UserDB
+	result := r.db.Where("oidc_id = ?", oidcID).First(&userDB)
 	if result.Error != nil {
 		return nil, result.Error
 	}
-	return &user, nil
+	return &models.User{
+		ID:             userDB.ID,
+		OIDCID:         userDB.OIDCID,
+		Email:          userDB.Email,
+		Name:           userDB.Name,
+		Username:       userDB.Username,
+		LastConnection: userDB.LastConnection,
+		CreatedAt:      userDB.CreatedAt,
+		UpdatedAt:      userDB.UpdatedAt,
+		DeletedAt:      userDB.DeletedAt,
+	}, nil
 }
 
 // FindUserByID recherche un utilisateur par son ID.
 func (r *GormUserRepository) FindUserByID(id uint) (*models.User, error) {
-	var user models.User
-	result := r.db.First(&user, id)
+	var userDB UserDB
+	result := r.db.First(&userDB, id)
 	if result.Error != nil {
 		return nil, result.Error
 	}
-	return &user, nil
+	return &models.User{
+		ID:             userDB.ID,
+		OIDCID:         userDB.OIDCID,
+		Email:          userDB.Email,
+		Name:           userDB.Name,
+		Username:       userDB.Username,
+		LastConnection: userDB.LastConnection,
+		CreatedAt:      userDB.CreatedAt,
+		UpdatedAt:      userDB.UpdatedAt,
+		DeletedAt:      userDB.DeletedAt,
+	}, nil
 }
 
 // CreateUser crée un nouvel utilisateur.
 func (r *GormUserRepository) CreateUser(user *models.User) error {
-	return r.db.Create(user).Error
+	userDB := UserDB{
+		OIDCID:         user.OIDCID,
+		Email:          user.Email,
+		Name:           user.Name,
+		Username:       user.Username,
+		LastConnection: user.LastConnection,
+	}
+	if err := r.db.Create(&userDB).Error; err != nil {
+		return err
+	}
+	// Mettre à jour l'ID du modèle de domaine après la création
+	user.ID = userDB.ID
+	user.CreatedAt = userDB.CreatedAt
+	user.UpdatedAt = userDB.UpdatedAt
+	user.DeletedAt = userDB.DeletedAt
+	return nil
 }
 
 // UpdateUser met à jour un utilisateur existant.
 func (r *GormUserRepository) UpdateUser(user *models.User) error {
-	return r.db.Save(user).Error
+	userDB := UserDB{
+		Model:          gorm.Model{ID: user.ID, CreatedAt: user.CreatedAt, UpdatedAt: user.UpdatedAt, DeletedAt: user.DeletedAt},
+		OIDCID:         user.OIDCID,
+		Email:          user.Email,
+		Name:           user.Name,
+		Username:       user.Username,
+		LastConnection: user.LastConnection,
+	}
+	return r.db.Save(&userDB).Error
 }
