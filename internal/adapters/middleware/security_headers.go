@@ -1,14 +1,17 @@
 package middleware
 
-import "github.com/gin-gonic/gin"
+import (
+	"github.com/JneiraS/BaseSasS/internal/config"
+	"github.com/gin-gonic/gin"
+)
 
 // SecurityHeaders ajoute des en-têtes de sécurité importants à chaque réponse.
-func SecurityHeaders() gin.HandlerFunc {
+func SecurityHeaders(cfg *config.Config) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// Politique de sécurité du contenu (CSP) - Restreint les sources de contenu.
 		// 'self' permet le contenu du même domaine.
 		// Vous devrez peut-être ajouter d'autres sources pour les CDN (ex: fonts.googleapis.com).
-		c.Header("Content-Security-Policy", "default-src 'self'; script-src 'self' 'sha256-nhU1dNZtRMH0wGMdWus+C2+OLS90BrB/ybY9vr8XxvA='; style-src 'self'; object-src 'none';")
+		c.Header("Content-Security-Policy", cfg.ContentSecurityPolicy)
 
 		// Empêche le navigateur de deviner le type MIME.
 		c.Header("X-Content-Type-Options", "nosniff")

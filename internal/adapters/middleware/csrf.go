@@ -3,14 +3,15 @@ package middleware
 import (
 	"net/http"
 
+	"github.com/JneiraS/BaseSasS/internal/config"
 	"github.com/gin-gonic/gin"
 	csrf "github.com/utrack/gin-csrf"
 )
 
 // CSRFProtection applique une protection contre les attaques CSRF.
-func CSRFProtection() gin.HandlerFunc {
+func CSRFProtection(cfg *config.Config) gin.HandlerFunc {
 	return csrf.Middleware(csrf.Options{
-		Secret: "a-very-strong-and-secret-key-for-csrf", // Doit être changé et chargé depuis les envs
+		Secret: cfg.CSRFSecret,
 		ErrorFunc: func(c *gin.Context) {
 			c.String(http.StatusBadRequest, "CSRF token mismatch")
 			c.Abort()

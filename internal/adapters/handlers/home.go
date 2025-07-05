@@ -7,14 +7,13 @@ import (
 	"github.com/JneiraS/BaseSasS/components/elements"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
-	csrf "github.com/utrack/gin-csrf"
 )
 
 // Page d'accueil
 func HomeHandler(c *gin.Context) {
-	session := sessions.Default(c)
+	session := c.MustGet("session").(sessions.Session)
 	user := session.Get("user")
-	csrfToken := csrf.GetToken(c)
+	csrfToken := c.MustGet("csrf_token").(string)
 	conn_button := elements.Button("Connexion", "btn btn-primary", "/login")
 	logout_button := elements.Button("Déconnexion", "btn btn-primary", "/logout")
 	navbar := components.NavBar(user, csrfToken)
