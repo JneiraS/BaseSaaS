@@ -13,6 +13,7 @@ import (
 	"github.com/coreos/go-oidc/v3/oidc"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
+	"golang.org/x/oauth2"
 )
 
 type AuthHandlers struct {
@@ -61,8 +62,6 @@ func (h *AuthHandlers) LoginHandler(c *gin.Context) {
 }
 
 func (h *AuthHandlers) CallbackHandler(c *gin.Context) {
-	
-
 	session := sessions.Default(c)
 	code := c.Query("code")
 	state := c.Query("state")
@@ -77,45 +76,20 @@ func (h *AuthHandlers) CallbackHandler(c *gin.Context) {
 
 	session.Delete("state")
 
-	ctx := context.Background()
-	token, err := h.authService.Oauth2Config.Exchange(ctx, code)
+	token, err := h.exchangeCodeForToken(c.Request.Context(), code)
 	if err != nil {
 		log.Printf("ERREUR échange de code: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"error":   "Erreur lors de l'échange du code",
+			"error": "Erreur lors de l'échange du code",
 		})
 		return
 	}
 
-	rawIDToken, ok := token.Extra("id_token").(string)
-	if !ok {
-		log.Printf("ERREUR: ID token manquant")
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "ID token manquant",
-		})
-		return
-	}
-
-	verifier := h.authService.Provider.Verifier(&oidc.Config{ClientID: h.authService.Oauth2Config.ClientID})
-	idToken, err := verifier.Verify(ctx, rawIDToken)
+	claims, err := h.verifyIDTokenAndExtractClaims(c.Request.Context(), token)
 	if err != nil {
-		log.Printf("ERREUR vérification ID token: %v", err)
+		log.Printf("ERREUR vérification ID token ou extraction claims: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Erreur de vérification du token",
-		})
-		return
-	}
-
-	var claims struct {
-		Email string `json:"email"`
-		Name  string `json:"name"`
-		Sub   string `json:"sub"`
-	}
-
-	if err := idToken.Claims(&claims); err != nil {
-		log.Printf("ERREUR extraction des claims: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Erreur d'extraction des informations utilisateur",
+			"error": "Erreur d'authentification",
 		})
 		return
 	}
@@ -139,6 +113,54 @@ func (h *AuthHandlers) CallbackHandler(c *gin.Context) {
 	}
 
 	c.Redirect(http.StatusFound, "/profile")
+}
+
+func (h *AuthHandlers) exchangeCodeForToken(ctx context.Context, code string) (*oauth2.Token, error) {
+	token, err := h.authService.Oauth2Config.Exchange(ctx, code)
+	if err != nil {
+		return nil, err
+	}
+	return token, nil
+}
+
+func (h *AuthHandlers) verifyIDTokenAndExtractClaims(ctx context.Context, token *oauth2.Token) (struct {
+	Email string `json:"email"`
+	Name  string `json:"name"`
+	Sub   string `json:"sub"`
+}, error) {
+	rawIDToken, ok := token.Extra("id_token").(string)
+	if !ok {
+		return struct {
+			Email string `json:"email"`
+			Name  string `json:"name"`
+			Sub   string `json:"sub"`
+		}{}, fmt.Errorf("ID token manquant")
+	}
+
+	verifier := h.authService.Provider.Verifier(&oidc.Config{ClientID: h.authService.Oauth2Config.ClientID})
+	idToken, err := verifier.Verify(ctx, rawIDToken)
+	if err != nil {
+		return struct {
+			Email string `json:"email"`
+			Name  string `json:"name"`
+			Sub   string `json:"sub"`
+		}{}, fmt.Errorf("erreur de vérification du token: %w", err)
+	}
+
+	var claims struct {
+		Email string `json:"email"`
+		Name  string `json:"name"`
+		Sub   string `json:"sub"`
+	}
+
+	if err := idToken.Claims(&claims); err != nil {
+		return struct {
+			Email string `json:"email"`
+			Name  string `json:"name"`
+			Sub   string `json:"sub"`
+		}{}, fmt.Errorf("erreur d'extraction des informations utilisateur: %w", err)
+	}
+	return claims, nil
 }
 
 func (h *AuthHandlers) LogoutHandler(c *gin.Context) {

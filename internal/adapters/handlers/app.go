@@ -144,7 +144,7 @@ func (app *App) setupServer() *gin.Engine {
 func (app *App) setupRoutes(r *gin.Engine) {
 	r.GET("/", app.LandingPage)
 	r.GET("/home", HomeHandler)
-	r.GET("/profile", app.authRequired(), ProfileHandler)
+	r.GET("/profile", app.authRequired(), app.ProfileHandler)
 	r.POST("/profile/update", app.authRequired(), app.UpdateProfileHandler)
 
 	// Les routes d'authentification ne sont actives que si le service OIDC est configuré.

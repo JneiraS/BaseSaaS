@@ -66,7 +66,7 @@ func (ps *ProfileService) UpdateUser(userID uint, updatedData models.User) (*mod
 }
 
 // Page profil (protégée)
-func ProfileHandler(c *gin.Context) {
+func (app *App) ProfileHandler(c *gin.Context) {
 	session := sessions.Default(c)
 	user, ok := session.Get("user").(models.User)
 	if !ok {
