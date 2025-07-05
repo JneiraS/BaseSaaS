@@ -25,12 +25,13 @@ import (
 
 // App encapsule les dépendances de l'application.
 type App struct {
-	authService  *services.AuthService
-	authHandlers *AuthHandlers
-	db           *gorm.DB
-	router       *gin.Engine
-	cfg          *config.Config
-	userRepo     repositories.UserRepository
+	authService    *services.AuthService
+	authHandlers   *AuthHandlers
+	profileService *services.ProfileService
+	db             *gorm.DB
+	router         *gin.Engine
+	cfg            *config.Config
+	userRepo       repositories.UserRepository
 }
 
 // NewApp crée et initialise une nouvelle instance de l'application.
@@ -51,6 +52,8 @@ func NewApp() (*App, error) {
 	log.Println("Database connection established.")
 
 	app.userRepo = repositories.NewGormUserRepository(app.db)
+
+	app.profileService = services.NewProfileService(app.userRepo)
 
 	// L'authentification est optionnelle, le serveur peut démarrer sans.
 	if err := app.initOIDCProvider(); err != nil {
