@@ -106,7 +106,7 @@ func (app *App) initOIDCProvider() error {
 func (app *App) setupServer() *gin.Engine {
 	r := gin.Default()
 
-	r.Use(middleware.SecurityHeaders())
+	r.Use(middleware.SecurityHeaders(app.cfg))
 
 	secretKey := []byte(app.cfg.SessionSecret)
 	store := cookie.NewStore(secretKey)
@@ -119,7 +119,7 @@ func (app *App) setupServer() *gin.Engine {
 	})
 
 	r.Use(sessions.Sessions(app.cfg.CookieName, store))
-	r.Use(middleware.CSRFProtection())
+	r.Use(middleware.CSRFProtection(app.cfg))
 
 	// Permet d'utiliser `{{ safe .variable }}` dans les templates pour afficher du HTML.
 	r.SetFuncMap(template.FuncMap{
