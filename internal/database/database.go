@@ -1,20 +1,15 @@
 package database
 
 import (
-	"log"
-
+	"fmt"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
 
-var DB *gorm.DB
-
-func InitDatabase() {
-	var err error
-	DB, err = gorm.Open(sqlite.Open("basesass.db"), &gorm.Config{})
+func InitDatabase() (*gorm.DB, error) {
+	db, err := gorm.Open(sqlite.Open("basesass.db"), &gorm.Config{})
 	if err != nil {
-		log.Fatalf("Failed to connect to database: %v", err)
+		return nil, fmt.Errorf("failed to connect to database: %w", err)
 	}
-
-	log.Println("Database connection established.")
+	return db, nil
 }

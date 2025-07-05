@@ -41,8 +41,12 @@ func NewApp() (*App, error) {
 	}
 	app.cfg = cfg
 
-	database.InitDatabase()
-	app.db = database.DB
+	db, err := database.InitDatabase()
+	if err != nil {
+		return nil, fmt.Errorf("failed to initialize database: %w", err)
+	}
+	app.db = db
+	log.Println("Database connection established.")
 
 	// L'authentification est optionnelle, le serveur peut démarrer sans.
 	if err := app.initOIDCProvider(); err != nil {
@@ -137,7 +141,7 @@ func (app *App) setupRoutes(r *gin.Engine) {
 	r.GET("/", app.LandingPage)
 	r.GET("/home", HomeHandler)
 	r.GET("/profile", app.authRequired(), ProfileHandler)
-	r.POST("/profile/update", app.authRequired(), UpdateProfileHandler)
+	r.POST("/profile/update", app.authRequired(), app.UpdateProfileHandler)
 
 	// Les routes d'authentification ne sont actives que si le service OIDC est configuré.
 	if app.authService != nil {

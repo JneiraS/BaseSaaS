@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	"github.com/JneiraS/BaseSasS/components"
-	"github.com/JneiraS/BaseSasS/internal/database"
 	"github.com/JneiraS/BaseSasS/internal/domain/models"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
@@ -104,7 +103,7 @@ func ProfileHandler(c *gin.Context) {
 }
 
 // UpdateProfileHandler gère la mise à jour du profil utilisateur (version améliorée)
-func UpdateProfileHandler(c *gin.Context) {
+func (app *App) UpdateProfileHandler(c *gin.Context) {
 	session := sessions.Default(c)
 	loggedInUser, ok := session.Get("user").(models.User)
 	if !ok {
@@ -116,19 +115,19 @@ func UpdateProfileHandler(c *gin.Context) {
 	var updatedUser models.User
 	if err := c.ShouldBind(&updatedUser); err != nil {
 		log.Printf("ERREUR: Erreur de binding du formulaire: %v", err)
-		ps := NewProfileService(database.DB)
-		ps.handleError(c, session, "Erreur lors de la lecture des données du formulaire.")
+		// ps := NewProfileService(database.DB) // Old way
+		app.handleProfileError(c, session, "Erreur lors de la lecture des données du formulaire.")
 		return
 	}
 
 	log.Printf("DEBUG: Données reçues du formulaire - Nom: %s, Email: %s", updatedUser.Name, updatedUser.Email)
 
 	// Utiliser le service pour mettre à jour l'utilisateur
-	profileService := NewProfileService(database.DB)
+	profileService := NewProfileService(app.db)
 	updatedUserFromDB, err := profileService.UpdateUser(loggedInUser.ID, updatedUser)
 	if err != nil {
 		log.Printf("ERREUR: Erreur lors de la mise à jour du profil: %v", err)
-		profileService.handleError(c, session, fmt.Sprintf("Erreur lors de la mise à jour: %s", err.Error()))
+		app.handleProfileError(c, session, fmt.Sprintf("Erreur lors de la mise à jour: %s", err.Error()))
 		return
 	}
 
@@ -146,8 +145,8 @@ func UpdateProfileHandler(c *gin.Context) {
 	c.Redirect(http.StatusFound, "/profile")
 }
 
-// handleError centralise la gestion des erreurs
-func (ps *ProfileService) handleError(c *gin.Context, session sessions.Session, message string) {
+// handleProfileError centralise la gestion des erreurs pour le profil
+func (app *App) handleProfileError(c *gin.Context, session sessions.Session, message string) {
 	session.AddFlash(message, "error")
 	if err := session.Save(); err != nil {
 		log.Printf("ERREUR: Erreur lors de la sauvegarde de la session d'erreur: %v", err)
