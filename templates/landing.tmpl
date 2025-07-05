@@ -3,54 +3,83 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gérez Votre Association Facilement</title>
+    <title>{{.title}}</title>
     <link rel="stylesheet" href="/static/css/landing.css">
     <link rel="stylesheet" href="/static/css/main.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <!-- Font Awesome pour les icônes -->
+    <link rel="stylesheet" href="/static/css/fontawesome/fontawesome-free-6.5.1-web/css/all.min.css">
 </head>
 <body>
 
     {{.navbar|safe}}
 
     <main>
-        <section class="hero">
+        <section class="hero-section">
             <div class="container">
-                <h1>Gérez Votre Association Facilement et Efficacement</h1>
-                <p>Simplifiez la gestion de vos membres, événements et communications avec notre plateforme intuitive.</p>
-                <a href="/login" class="cta-button">Commencez Gratuitement</a>
+                <div class="hero-content">
+                    <h1>Gérez Votre Association Facilement et Efficacement</h1>
+                    <p class="subtitle">Simplifiez la gestion de vos membres, événements et communications avec notre plateforme intuitive.</p>
+                    <a href="/login" class="btn btn-primary hero-cta">Commencez Gratuitement</a>
+                </div>
             </div>
         </section>
 
-        <section class="features">
+        <section class="features-section">
             <div class="container">
+                <h2 class="section-title">Fonctionnalités Clés</h2>
                 <div class="features-grid">
                     <div class="feature-card">
-                        <div class="icon">👥</div>
+                        <div class="icon-wrapper"><i class="fas fa-users"></i></div>
                         <h3>Gestion des Membres</h3>
                         <p>Suivez les adhésions, les cotisations et les informations de contact de tous vos membres.</p>
                     </div>
                     <div class="feature-card">
-                        <div class="icon">📅</div>
+                        <div class="icon-wrapper"><i class="fas fa-calendar-alt"></i></div>
                         <h3>Planification d'Événements</h3>
                         <p>Créez, organisez et gérez les inscriptions à tous vos événements associatifs.</p>
                     </div>
                     <div class="feature-card">
-                        <div class="icon">📣</div>
+                        <div class="icon-wrapper"><i class="fas fa-bullhorn"></i></div>
                         <h3>Communication Simplifiée</h3>
                         <p>Envoyez des newsletters, des annonces et communiquez facilement avec vos membres.</p>
                     </div>
+                    <div class="feature-card">
+                        <div class="icon-wrapper"><i class="fas fa-chart-line"></i></div>
+                        <h3>Suivi des Statistiques</h3>
+                        <p>Obtenez des aperçus clairs sur l'activité de votre association et prenez des décisions éclairées.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="icon-wrapper"><i class="fas fa-file-invoice-dollar"></i></div>
+                        <h3>Gestion Financière</h3>
+                        <p>Gérez les finances de votre association, suivez les dépenses et les revenus.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="icon-wrapper"><i class="fas fa-cloud"></i></div>
+                        <h3>Accès Cloud Sécurisé</h3>
+                        <p>Accédez à vos données de n'importe où, en toute sécurité, avec notre plateforme cloud.</p>
+                    </div>
                 </div>
+            </div>
+        </section>
+
+        <section class="cta-section">
+            <div class="container">
+                <h2>Prêt à Simplifier la Gestion de Votre Association ?</h2>
+                <p>Rejoignez des centaines d'associations qui nous font déjà confiance.</p>
+                <a href="/login" class="btn btn-secondary cta-button">Commencez Votre Essai Gratuit</a>
             </div>
         </section>
     </main>
 
     <footer class="footer">
         <div class="container">
-            <p>&copy; 2025 Gestion Associations. Tous droits réservés.</p>
+            <p>&copy; 2025 BaseSasS. Tous droits réservés.</p>
         </div>
     </footer>
+    <script src="/static/js/theme.js"></script>
 
 </body>
 </html>
