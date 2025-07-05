@@ -8,7 +8,7 @@ func SecurityHeaders() gin.HandlerFunc {
 		// Politique de sécurité du contenu (CSP) - Restreint les sources de contenu.
 		// 'self' permet le contenu du même domaine.
 		// Vous devrez peut-être ajouter d'autres sources pour les CDN (ex: fonts.googleapis.com).
-		c.Header("Content-Security-Policy", "default-src 'self'; script-src 'self'; style-src 'self'; object-src 'none';")
+		c.Header("Content-Security-Policy", "default-src 'self'; script-src 'self' 'sha256-nhU1dNZtRMH0wGMdWus+C2+OLS90BrB/ybY9vr8XxvA='; style-src 'self'; object-src 'none';")
 
 		// Empêche le navigateur de deviner le type MIME.
 		c.Header("X-Content-Type-Options", "nosniff")

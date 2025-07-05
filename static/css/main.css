@@ -1,4 +1,4 @@
-:root {
+:root, [data-theme="dark"] {
     --main-color: #111827;
     --container-color: #1a253c;
     --main-comp-color: rgb(20, 27, 42);
@@ -6,10 +6,21 @@
     --primary-color-hover: #53768c;
     --font-color: #d4d4d4;
     --font-dark-color: #1d1d1d;
-
     --border-color: #272f3c;
     --border-color-input: #7c7f89;
     --height-navbar: 56px;
+}
+
+[data-theme="light"] {
+    --main-color: #f0f2f5;
+    --container-color: #ffffff;
+    --main-comp-color: #ffffff;
+    --primary-color: #3b82f6;
+    --primary-color-hover: #2563eb;
+    --font-color: #1f2937;
+    --font-dark-color: #ffffff;
+    --border-color: #e5e7eb;
+    --border-color-input: #d1d5db;
 }
 
 h1 {
@@ -148,6 +159,14 @@ body {
     .ctn-btn .btn {
         font-size: 10px;
         padding: 6px 12px;
+    }
+
+    #theme-switcher {
+        background-color: transparent;
+        border: none;
+        color: var(--font-color);
+        cursor: pointer;
+        font-size: 1.5rem;
     }
 }
 
