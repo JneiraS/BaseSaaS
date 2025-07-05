@@ -6,6 +6,7 @@ import (
 	"encoding/base64"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/JneiraS/BaseSasS/internal/database"
 	"github.com/JneiraS/BaseSasS/internal/domain/models"
@@ -135,9 +136,10 @@ func (h *AuthHandlers) CallbackHandler(c *gin.Context) {
 	if result.Error == gorm.ErrRecordNotFound {
 		// L'utilisateur n'existe pas, le créer
 		user = models.User{
-			OIDCID: claims.Sub,
-			Email:  claims.Email,
-			Name:   claims.Name,
+			OIDCID:         claims.Sub,
+			Email:          claims.Email,
+			Name:           claims.Name,
+			LastConnection: time.Now(),
 			// Username: claims.Sub, // Ou claims.PreferredUsername si disponible
 		}
 		if createResult := h.db.Create(&user); createResult.Error != nil {
@@ -158,6 +160,8 @@ func (h *AuthHandlers) CallbackHandler(c *gin.Context) {
 		// L'utilisateur existe, mettre à jour ses informations si nécessaire
 		user.Email = claims.Email
 		user.Name = claims.Name
+		user.LastConnection = time.Now()
+
 		// user.Username = claims.Sub // Ou claims.PreferredUsername si disponible
 		if updateResult := h.db.Save(&user); updateResult.Error != nil {
 			log.Printf("ERREUR mise à jour utilisateur: %v", updateResult.Error)
