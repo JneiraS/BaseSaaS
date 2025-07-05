@@ -6,10 +6,10 @@ import (
 	"html/template"
 	"log"
 	"net/http"
-	"os"
 	"time"
 
 	"github.com/JneiraS/BaseSasS/internal/adapters/middleware"
+	"github.com/JneiraS/BaseSasS/internal/config"
 	"github.com/JneiraS/BaseSasS/internal/database"
 	"github.com/JneiraS/BaseSasS/internal/domain/models"
 	"github.com/JneiraS/BaseSasS/internal/services"
@@ -28,11 +28,18 @@ type App struct {
 	authHandlers *AuthHandlers
 	db           *gorm.DB
 	router       *gin.Engine
+	cfg          *config.Config
 }
 
 // NewApp crée et initialise une nouvelle instance de l'application.
 func NewApp() (*App, error) {
 	app := &App{}
+
+	cfg, err := config.LoadConfig()
+	if err != nil {
+		return nil, fmt.Errorf("failed to load configuration: %w", err)
+	}
+	app.cfg = cfg
 
 	database.InitDatabase()
 	app.db = database.DB
@@ -47,7 +54,7 @@ func NewApp() (*App, error) {
 	}
 	log.Println("Database migration completed.")
 
-	app.authHandlers = NewAuthHandlers(app.authService)
+	app.authHandlers = NewAuthHandlers(app.authService, app.cfg)
 
 	router := app.setupServer()
 	app.setupRoutes(router)
@@ -69,27 +76,15 @@ func (app *App) initOIDCProvider() error {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	providerURL := os.Getenv("OIDC_PROVIDER_URL")
-	if providerURL == "" {
-		providerURL = "http://localhost:8080" // URL par défaut pour le développement
-	}
-
-	provider, err := oidc.NewProvider(ctx, providerURL)
+	provider, err := oidc.NewProvider(ctx, app.cfg.OIDCProviderURL)
 	if err != nil {
 		return fmt.Errorf("impossible de se connecter au provider OIDC: %w", err)
 	}
 
-	clientID := os.Getenv("CLIENT_ID")
-	clientSecret := os.Getenv("CLIENT_SECRET")
-
-	if clientID == "" || clientSecret == "" {
-		return fmt.Errorf("CLIENT_ID ou CLIENT_SECRET manquant")
-	}
-
 	oauth2Config := &oauth2.Config{
-		ClientID:     clientID,
-		ClientSecret: clientSecret,
-		RedirectURL:  "http://localhost:3000/callback",
+		ClientID:     app.cfg.ClientID,
+		ClientSecret: app.cfg.ClientSecret,
+		RedirectURL:  app.cfg.RedirectURL,
 		Endpoint:     provider.Endpoint(),
 		Scopes:       []string{oidc.ScopeOpenID, "profile", "email"},
 	}
@@ -105,22 +100,17 @@ func (app *App) setupServer() *gin.Engine {
 
 	r.Use(middleware.SecurityHeaders())
 
-	secretKey := []byte(os.Getenv("SESSION_SECRET"))
-	if len(secretKey) == 0 {
-		secretKey = []byte("ma-cle-secrete-de-32-caracteres-minimum-pour-securite")
-		log.Println("Avertissement: SESSION_SECRET non définie, utilisation d'une clé par défaut.")
-	}
-
+	secretKey := []byte(app.cfg.SessionSecret)
 	store := cookie.NewStore(secretKey)
 	store.Options(sessions.Options{
 		Path:     "/",
-		MaxAge:   86400, // 24 heures
-		HttpOnly: false, // true en production
-		Secure:   false, // true en production
-		SameSite: http.SameSiteDefaultMode,
+		MaxAge:   app.cfg.SessionMaxAge,
+		HttpOnly: app.cfg.SessionHttpOnly,
+		Secure:   app.cfg.SessionSecure,
+		SameSite: app.cfg.SessionSameSiteMode(),
 	})
 
-	r.Use(sessions.Sessions("mysession", store))
+	r.Use(sessions.Sessions(app.cfg.CookieName, store))
 	r.Use(middleware.CSRFProtection())
 
 	// Permet d'utiliser `{{ safe .variable }}` dans les templates pour afficher du HTML.

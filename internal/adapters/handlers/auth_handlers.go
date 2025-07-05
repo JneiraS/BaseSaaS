@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/JneiraS/BaseSasS/internal/config"
 	"github.com/JneiraS/BaseSasS/internal/services"
 	"github.com/coreos/go-oidc/v3/oidc"
 	"github.com/gin-contrib/sessions"
@@ -16,11 +17,13 @@ import (
 
 type AuthHandlers struct {
 	authService *services.AuthService
+	cfg         *config.Config
 }
 
-func NewAuthHandlers(authService *services.AuthService) *AuthHandlers {
+func NewAuthHandlers(authService *services.AuthService, cfg *config.Config) *AuthHandlers {
 	return &AuthHandlers{
 		authService: authService,
+		cfg:         cfg,
 	}
 }
 
@@ -155,11 +158,11 @@ func (h *AuthHandlers) LogoutHandler(c *gin.Context) {
 	}
 
 	// Supprimer le cookie manuellement (optionnel si Save le fait déjà)
-	cookieName := "session" // Nom du cookie utilisé par votre store
-	c.SetCookie(cookieName, "", -1, "/", "localhost", false, true)
+	cookieName := h.cfg.CookieName
+	c.SetCookie(cookieName, "", -1, "/", "", false, true)
 
 	// Rediriger l'utilisateur
-	c.Redirect(http.StatusFound, "http://localhost:3000/")
+	c.Redirect(http.StatusFound, h.cfg.AppURL)
 }
 
 func generateRandomState() (string, error) {
