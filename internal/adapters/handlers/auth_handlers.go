@@ -6,26 +6,20 @@ import (
 	"encoding/base64"
 	"log"
 	"net/http"
-	"time"
 
-	"github.com/JneiraS/BaseSasS/internal/database"
-	"github.com/JneiraS/BaseSasS/internal/domain/models"
 	"github.com/JneiraS/BaseSasS/internal/services"
 	"github.com/coreos/go-oidc/v3/oidc"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
-	"gorm.io/gorm"
 )
 
 type AuthHandlers struct {
 	authService *services.AuthService
-	db          *gorm.DB
 }
 
 func NewAuthHandlers(authService *services.AuthService) *AuthHandlers {
 	return &AuthHandlers{
 		authService: authService,
-		db:          database.DB,
 	}
 }
 
@@ -129,47 +123,13 @@ func (h *AuthHandlers) CallbackHandler(c *gin.Context) {
 		return
 	}
 
-	// Rechercher l'utilisateur par son OIDCID (Sub)
-	var user models.User
-	result := h.db.Where("oidc_id = ?", claims.Sub).First(&user)
-
-	if result.Error == gorm.ErrRecordNotFound {
-		// L'utilisateur n'existe pas, le créer
-		user = models.User{
-			OIDCID:         claims.Sub,
-			Email:          claims.Email,
-			Name:           claims.Name,
-			LastConnection: time.Now(),
-			// Username: claims.Sub, // Ou claims.PreferredUsername si disponible
-		}
-		if createResult := h.db.Create(&user); createResult.Error != nil {
-			log.Printf("ERREUR création utilisateur: %v", createResult.Error)
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"error": "Erreur lors de la création de l'utilisateur",
-			})
-			return
-		}
-	} else if result.Error != nil {
-		// Erreur lors de la recherche
-		log.Printf("ERREUR recherche utilisateur: %v", result.Error)
+	user, err := h.authService.FindOrCreateUserFromClaims(claims)
+	if err != nil {
+		log.Printf("ERREUR FindOrCreateUserFromClaims: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Erreur lors de la recherche de l'utilisateur",
+			"error": "Erreur lors de la gestion de l'utilisateur",
 		})
 		return
-	} else {
-		// L'utilisateur existe, mettre à jour ses informations si nécessaire
-		user.Email = claims.Email
-		user.Name = claims.Name
-		user.LastConnection = time.Now()
-
-		// user.Username = claims.Sub // Ou claims.PreferredUsername si disponible
-		if updateResult := h.db.Save(&user); updateResult.Error != nil {
-			log.Printf("ERREUR mise à jour utilisateur: %v", updateResult.Error)
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"error": "Erreur lors de la mise à jour de l'utilisateur",
-			})
-			return
-		}
 	}
 
 	session.Set("user", user)

@@ -34,13 +34,13 @@ type App struct {
 func NewApp() (*App, error) {
 	app := &App{}
 
+	database.InitDatabase()
+	app.db = database.DB
+
 	// L'authentification est optionnelle, le serveur peut démarrer sans.
 	if err := app.initOIDCProvider(); err != nil {
 		log.Printf("AVERTISSEMENT: Authentification indisponible: %v", err)
 	}
-
-	database.InitDatabase()
-	app.db = database.DB
 
 	if err := app.db.AutoMigrate(&models.User{}); err != nil {
 		return nil, fmt.Errorf("failed to migrate database: %w", err)
@@ -94,7 +94,7 @@ func (app *App) initOIDCProvider() error {
 		Scopes:       []string{oidc.ScopeOpenID, "profile", "email"},
 	}
 
-	app.authService = services.NewAuthService(provider, oauth2Config)
+	app.authService = services.NewAuthService(provider, oauth2Config, app.db)
 
 	return nil
 }
