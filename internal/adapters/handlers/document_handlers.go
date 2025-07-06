@@ -48,6 +48,10 @@ func (h *DocumentHandlers) ListDocuments(c *gin.Context) {
 		"documents":  documents,
 		"csrf_token": csrfToken,
 	})
+	if err := session.Save(); err != nil {
+		// Gérer l'erreur de sauvegarde de session si nécessaire
+		// log.Printf("Erreur lors de la sauvegarde de session dans ListDocuments: %v", err)
+	}
 }
 
 // ShowUploadForm affiche le formulaire de téléchargement de document.

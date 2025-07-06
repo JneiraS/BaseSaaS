@@ -270,6 +270,16 @@ body {
 }
 
 /* Styles pour les messages flash */
+@keyframes fadeOut {
+    from {
+        opacity: 1;
+    }
+
+    to {
+        opacity: 0;
+    }
+}
+
 .flash-message-container {
     position: fixed;
     top: 7px;
@@ -278,6 +288,7 @@ body {
     display: flex;
     flex-direction: column;
     gap: 10px;
+    animation: fadeOut 1s ease-out 3s forwards;
 }
 
 .flash-message {

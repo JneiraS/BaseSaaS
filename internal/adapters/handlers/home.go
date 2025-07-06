@@ -25,4 +25,8 @@ func HomeHandler(c *gin.Context) {
 		"logout_button":    logout_button,
 		"navbar":           navbar,
 	})
+	if err := session.Save(); err != nil {
+		// Gérer l'erreur de sauvegarde de session si nécessaire
+		// log.Printf("Erreur lors de la sauvegarde de session dans HomeHandler: %v", err)
+	}
 }

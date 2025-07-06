@@ -51,6 +51,10 @@ func (h *MemberHandlers) ListMembers(c *gin.Context) {
 		"members":    members,
 		"csrf_token": csrfToken, // Ajout du jeton CSRF au contexte du template
 	})
+	if err := session.Save(); err != nil {
+		// Gérer l'erreur de sauvegarde de session si nécessaire
+		// log.Printf("Erreur lors de la sauvegarde de session dans ListMembers: %v", err)
+	}
 }
 
 // ShowCreateMemberForm affiche le formulaire de création d'un nouveau membre.
@@ -72,6 +76,10 @@ func (h *MemberHandlers) ShowCreateMemberForm(c *gin.Context) {
 		"csrf_token": csrfToken,
 		"member":     models.Member{MembershipStatus: models.StatusActive, JoinDate: time.Now()}, // Valeurs par défaut
 	})
+	if err := session.Save(); err != nil {
+		// Gérer l'erreur de sauvegarde de session si nécessaire
+		// log.Printf("Erreur lors de la sauvegarde de session dans ShowCreateMemberForm: %v", err)
+	}
 }
 
 // CreateMember gère la soumission du formulaire de création de membre.
@@ -142,6 +150,10 @@ func (h *MemberHandlers) ShowEditMemberForm(c *gin.Context) {
 		"csrf_token": csrfToken,
 		"member":     member,
 	})
+	if err := session.Save(); err != nil {
+		// Gérer l'erreur de sauvegarde de session si nécessaire
+		// log.Printf("Erreur lors de la sauvegarde de session dans ShowEditMemberForm: %v", err)
+	}
 }
 
 // UpdateMember gère la soumission du formulaire de modification de membre.

@@ -47,6 +47,10 @@ func (h *FinanceHandlers) ListTransactions(c *gin.Context) {
 		"transactions": transactions,
 		"csrf_token":   csrfToken,
 	})
+	if err := session.Save(); err != nil {
+		// Gérer l'erreur de sauvegarde de session si nécessaire
+		// log.Printf("Erreur lors de la sauvegarde de session dans ListTransactions: %v", err)
+	}
 }
 
 // ShowCreateTransactionForm affiche le formulaire de création d'une nouvelle transaction.
@@ -68,6 +72,10 @@ func (h *FinanceHandlers) ShowCreateTransactionForm(c *gin.Context) {
 		"csrf_token":  csrfToken,
 		"transaction": models.Transaction{Date: time.Now()}, // Valeurs par défaut
 	})
+	if err := session.Save(); err != nil {
+		// Gérer l'erreur de sauvegarde de session si nécessaire
+		// log.Printf("Erreur lors de la sauvegarde de session dans ShowCreateTransactionForm: %v", err)
+	}
 }
 
 // CreateTransaction gère la soumission du formulaire de création de transaction.
@@ -132,6 +140,10 @@ func (h *FinanceHandlers) ShowEditTransactionForm(c *gin.Context) {
 		"csrf_token":  csrfToken,
 		"transaction": transaction,
 	})
+	if err := session.Save(); err != nil {
+		// Gérer l'erreur de sauvegarde de session si nécessaire
+		// log.Printf("Erreur lors de la sauvegarde de session dans ShowEditTransactionForm: %v", err)
+	}
 }
 
 // UpdateTransaction gère la soumission du formulaire de modification de transaction.

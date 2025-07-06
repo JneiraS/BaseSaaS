@@ -29,6 +29,10 @@ func (app *App) ProfileHandler(c *gin.Context) {
 		"navbar":     navbar,
 		"csrf_token": csrfToken,
 	})
+	if err := session.Save(); err != nil {
+		// Gérer l'erreur de sauvegarde de session si nécessaire
+		// log.Printf("Erreur lors de la sauvegarde de session dans ProfileHandler: %v", err)
+	}
 }
 
 // UpdateProfileHandler gère la mise à jour du profil utilisateur (version améliorée)
