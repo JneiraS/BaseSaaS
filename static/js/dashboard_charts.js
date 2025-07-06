@@ -1,4 +1,8 @@
 document.addEventListener('DOMContentLoaded', function() {
+    console.log("DEBUG: dashboard_charts.js loaded.");
+    console.log("DEBUG: typeof Chart:", typeof Chart);
+    console.log("DEBUG: Chart object:", Chart);
+
     // Fonction générique pour récupérer les données et créer un graphique
     async function fetchDataAndCreateChart(url, chartId, chartType, labels, dataKey, title) {
         try {

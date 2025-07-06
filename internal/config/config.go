@@ -47,7 +47,7 @@ func LoadConfig() (*Config, error) {
 		AppURL:                getEnv("APP_URL", "http://localhost:3000"),
 		CookieName:            getEnv("COOKIE_NAME", "mysession"),
 		CSRFSecret:            os.Getenv("CSRF_SECRET"),
-		ContentSecurityPolicy: getEnv("CONTENT_SECURITY_POLICY", "default-src 'self'; script-src 'self' 'sha256-nhU1dNZtRMH0wGMdWus+C2+OLS90BrB/ybY9vr8XxvA='; style-src 'self' https://fonts.googleapis.com https://fonts.gstatic.com; font-src 'self' https://fonts.gstatic.com; object-src 'none';"),
+		ContentSecurityPolicy: getEnv("CONTENT_SECURITY_POLICY", "default-src 'self'; script-src 'self' https://cdn.jsdelivr.net 'sha256-nhU1dNZtRMH0wGMdWus+C2+OLS90BrB/ybY9vr8XxvA='; style-src 'self' https://fonts.googleapis.com https://fonts.gstatic.com 'unsafe-inline'; font-src 'self' https://fonts.gstatic.com; object-src 'none';"),
 
 		SMTPHost:     os.Getenv("SMTP_HOST"),
 		SMTPPort:     getEnvAsInt("SMTP_PORT", 587), // Default SMTP port
