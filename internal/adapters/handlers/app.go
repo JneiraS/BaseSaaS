@@ -95,7 +95,7 @@ func NewApp() (*App, error) {
 	}
 
 	// Auto-migrate database schemas for all models.
-	if err := app.db.AutoMigrate(&repositories.UserDB{}, &repositories.MemberDB{}, &repositories.EventDB{}, &repositories.TransactionDB{}, &repositories.DocumentDB{}); err != nil {
+	if err := app.db.AutoMigrate(&repositories.UserDB{}, &repositories.MemberDB{}, &repositories.EventDB{}, &repositories.TransactionDB{}, &repositories.DocumentDB{}, &repositories.PollDB{}, &repositories.OptionDB{}, &repositories.VoteDB{}); err != nil {
 		return nil, fmt.Errorf("failed to migrate database: %w", err)
 	}
 	log.Println("Database migration completed.")
