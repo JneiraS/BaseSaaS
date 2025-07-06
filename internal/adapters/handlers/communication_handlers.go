@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 
@@ -72,23 +73,29 @@ func (h *CommunicationHandlers) SendEmailToMembers(c *gin.Context) {
 
 	if len(recipientEmails) == 0 {
 		log.Printf("INFO: Aucun membre trouvé pour l'envoi d'e-mail.")
-		c.HTML(http.StatusOK, "email_form.tmpl", gin.H{
-			"title":      "Envoyer un e-mail aux membres",
-			"navbar":     components.NavBar(user, c.MustGet("csrf_token").(string)),
-			"user":       user,
-			"csrf_token": c.MustGet("csrf_token").(string),
-			"message":    "Aucun membre trouvé pour envoyer l'e-mail.",
-		})
+		session.AddFlash("Aucun membre trouvé pour envoyer l'e-mail.", "warning")
+		if err := session.Save(); err != nil {
+			log.Printf("ERREUR: Erreur lors de la sauvegarde de la session: %v", err)
+		}
+		c.Redirect(http.StatusFound, "/profile")
 		return
 	}
 
 	// Envoyer l'e-mail
 	if err := h.emailService.SendEmail(recipientEmails, subject, body); err != nil {
 		log.Printf("ERREUR: Échec de l'envoi de l'e-mail: %v", err)
-		c.HTML(http.StatusInternalServerError, "error.tmpl", gin.H{"error": "Échec de l'envoi de l'e-mail: " + err.Error()})
+		session.AddFlash("Échec de l'envoi de l'e-mail: "+err.Error(), "error")
+		if err := session.Save(); err != nil {
+			log.Printf("ERREUR: Erreur lors de la sauvegarde de la session: %v", err)
+		}
+		c.Redirect(http.StatusFound, "/profile")
 		return
 	}
 
 	log.Printf("INFO: E-mail envoyé avec succès à %d membres.", len(recipientEmails))
+	session.AddFlash(fmt.Sprintf("E-mail envoyé avec succès à %d membres.", len(recipientEmails)), "success")
+	if err := session.Save(); err != nil {
+		log.Printf("ERREUR: Erreur lors de la sauvegarde de la session: %v", err)
+	}
 	c.Redirect(http.StatusFound, "/profile")
 }

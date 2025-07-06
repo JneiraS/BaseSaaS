@@ -20,6 +20,7 @@ func NavBar(user any, csrfToken string) gom.Node {
 			gomh.Class("navbar"),
 			logoElement,
 			gomh.Div(
+
 				gomh.Class("ctn-btn"),
 				containerButton(),
 				logoutForm(csrfToken),
