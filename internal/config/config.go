@@ -28,6 +28,9 @@ type Config struct {
 	SMTPUsername string
 	SMTPPassword string
 	EmailSender  string
+
+	// Document Storage
+	DocumentStoragePath string
 }
 
 func LoadConfig() (*Config, error) {
@@ -51,6 +54,8 @@ func LoadConfig() (*Config, error) {
 		SMTPUsername: os.Getenv("SMTP_USERNAME"),
 		SMTPPassword: os.Getenv("SMTP_PASSWORD"),
 		EmailSender:  getEnv("EMAIL_SENDER", "no-reply@assoss.com"),
+
+		DocumentStoragePath: getEnv("DOCUMENT_STORAGE_PATH", "./data/documents"),
 	}
 
 	if cfg.ClientID == "" || cfg.ClientSecret == "" {

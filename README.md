@@ -56,6 +56,7 @@ Ouvrez ensuite le fichier `.env` et renseignez les valeurs requises :
 - `SMTP_USERNAME` : Le nom d'utilisateur pour l'authentification SMTP.
 - `SMTP_PASSWORD` : Le mot de passe pour l'authentification SMTP.
 - `EMAIL_SENDER` : L'adresse e-mail de l'expéditeur (ex: `no-reply@yourdomain.com`).
+- `DOCUMENT_STORAGE_PATH` : Le chemin où les documents téléchargés seront stockés (ex: `./data/documents`).
 
 ### 3. Installer les Dépendances
 

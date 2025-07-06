@@ -13,30 +13,33 @@ func NavBar(user any, csrfToken string, session sessions.Session) gom.Node {
 		gom.Text("🚀"),
 	)
 
-	// themeSwitcher := elements.Button("Changer de thème", "btn", "#", gom.Attr("id", "theme-switcher"))
 	themeSwitcher := gomh.I(gomh.Class("fa-solid fa-lightbulb"), gom.Attr("id", "theme-switcher"))
 
+	// Contenu du div ctn-btn
+	var ctnBtnContent []gom.Node
 	if user != nil {
-		return gomh.Section(
-			gomh.Class("navbar"),
-			logoElement,
-			gomh.Div(
-				gomh.Class("ctn-btn"),
-				containerButton(),
-				logoutForm(csrfToken),
-				themeSwitcher,
-			),
-		)
+		ctnBtnContent = []gom.Node{
+			containerButton(),
+			logoutForm(csrfToken),
+			themeSwitcher,
+		}
+	} else {
+		ctnBtnContent = []gom.Node{
+			elements.Button("Connexion", "btn", "/login"),
+			themeSwitcher,
+		}
 	}
+
+	// Construire les arguments pour gomh.Div
+	var divArgs []gom.Node
+	divArgs = append(divArgs, gomh.Class("ctn-btn"))
+	divArgs = append(divArgs, ctnBtnContent...)
+
 	return gomh.Section(
 		gomh.Class("navbar"),
 		logoElement,
-		gomh.Div(
-			FlashMessages(session),
-			gomh.Class("ctn-btn"),
-			elements.Button("Connexion", "btn", "/login"),
-			themeSwitcher,
-		),
+		gomh.Div(divArgs...),
+		FlashMessages(session), // Toujours inclure les messages flash ici
 	)
 }
 
@@ -58,6 +61,7 @@ func containerButton() gom.Node {
 			gomh.A(gom.Text("Mes événements"), gom.Attr("href", "/events")),
 			gomh.A(gom.Text("Communication"), gom.Attr("href", "/communication/email")),
 			gomh.A(gom.Text("Finance"), gom.Attr("href", "/finance/transactions")),
+			gomh.A(gom.Text("Documents"), gom.Attr("href", "/documents")),
 			gomh.A(gom.Text("Mes favoris"), gom.Attr("href", "/favoris")),
 			gomh.A(gom.Text("Mes commandes"), gom.Attr("href", "/commandes")),
 		),
