@@ -45,10 +45,11 @@ func (h *MemberHandlers) ListMembers(c *gin.Context) {
 	navbar := components.NavBar(user, csrfToken)
 
 	c.HTML(http.StatusOK, "members.tmpl", gin.H{
-		"title":   "Mes Membres",
-		"navbar":  navbar,
-		"user":    user,
-		"members": members,
+		"title":      "Mes Membres",
+		"navbar":     navbar,
+		"user":       user,
+		"members":    members,
+		"csrf_token": csrfToken, // Ajout du jeton CSRF au contexte du template
 	})
 }
 
