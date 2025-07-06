@@ -42,10 +42,7 @@
                 <h3>Statistiques Financières</h3>
                 <canvas id="financeChart"></canvas>
             </div>
-            <div class="chart-card">
-                <h3>Statistiques des Événements</h3>
-                <canvas id="eventsChart"></canvas>
-            </div>
+            
             <div class="chart-card">
                 <h3>Statistiques des Documents</h3>
                 <canvas id="documentsChart"></canvas>
@@ -55,6 +52,6 @@
 
     <script src="/static/js/theme.js"></script>
     <script src="/static/js/flash_messages.js"></script>
-    <script src="/static/js/dashboard_charts.js"></script> <!-- Inclure le nouveau fichier JS -->
+    <script src="/static/js/dashboard_charts.js?v={{.CurrentTimestamp}}"></script> <!-- Inclure le nouveau fichier JS -->
 </body>
 </html>

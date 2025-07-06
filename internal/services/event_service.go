@@ -2,6 +2,7 @@ package services
 
 import (
 	"fmt"
+	"log"
 	"strings"
 
 	"github.com/JneiraS/BaseSasS/internal/domain/models"
@@ -51,7 +52,14 @@ func (s *EventService) DeleteEvent(id uint) error {
 
 // GetTotalEventsCount retourne le nombre total d'événements pour un utilisateur donné.
 func (s *EventService) GetTotalEventsCount(userID uint) (int64, error) {
-	return s.eventRepo.GetTotalEventsCount(userID)
+	log.Printf("Attempting to get total events count for user ID: %d", userID)
+	count, err := s.eventRepo.GetTotalEventsCount(userID)
+	if err != nil {
+		log.Printf("Error from event repository GetTotalEventsCount for user %d: %v", userID, err)
+		return 0, err
+	}
+	log.Printf("Successfully retrieved total events count for user %d: %d", userID, count)
+	return count, nil
 }
 
 // validateEvent valide les données d'un événement.

@@ -6,7 +6,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Fonction générique pour récupérer les données et créer un graphique
     async function fetchDataAndCreateChart(url, chartId, chartType, labels, dataKey, title) {
         try {
-            const response = await fetch(url);
+            const response = await fetch(url, { credentials: 'include' });
             const data = await response.json();
 
             let chartData = [];
@@ -67,13 +67,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             });
         } catch (error) {
-            console.error(`Erreur lors de la récupération des données pour ${chartId}:`, error);
+            console.error(`Erreur lors de la récupération des données pour ${chartId}:`, error.name, error.message, error);
         }
     }
 
     // Appels pour chaque graphique
     fetchDataAndCreateChart('/api/stats/members', 'membersChart', 'pie', [], '', 'Statistiques des Membres');
     fetchDataAndCreateChart('/api/stats/finance', 'financeChart', 'bar', [], '', 'Statistiques Financières');
-    fetchDataAndCreateChart('/api/stats/events', 'eventsChart', 'bar', [], '', 'Statistiques des Événements');
+    
     fetchDataAndCreateChart('/api/stats/documents', 'documentsChart', 'bar', [], '', 'Statistiques des Documents');
 });

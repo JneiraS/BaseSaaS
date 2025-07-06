@@ -1,7 +1,9 @@
 package handlers
 
 import (
+	"log"
 	"net/http"
+	"time"
 
 	"github.com/JneiraS/BaseSasS/components"
 	"github.com/JneiraS/BaseSasS/internal/domain/models"
@@ -45,6 +47,7 @@ func (h *StatisticsHandlers) ShowDashboard(c *gin.Context) {
 		"navbar":     navbar,
 		"user":       user,
 		"csrf_token": csrfToken,
+		"CurrentTimestamp": time.Now().Unix(),
 	})
 	if err := session.Save(); err != nil {
 		// Gérer l'erreur de sauvegarde de session si nécessaire
@@ -118,7 +121,8 @@ func (h *StatisticsHandlers) GetEventStats(c *gin.Context) {
 
 	totalEvents, err := h.eventService.GetTotalEventsCount(user.ID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erreur lors de la récupération du nombre total d'événements"})
+		log.Printf("Error getting total events count for user %d: %v", user.ID, err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erreur lors de la récupération du nombre total d'événements", "details": err.Error()})
 		return
 	}
 

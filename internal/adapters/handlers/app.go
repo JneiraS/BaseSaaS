@@ -306,10 +306,12 @@ func (app *App) authRequired() gin.HandlerFunc {
 		user := session.Get("user")
 
 		if user == nil {
+			log.Printf("AuthRequired: User not found in session. Redirecting to /login. Request path: %s", c.Request.URL.Path)
 			c.Redirect(http.StatusFound, "/login")
 			c.Abort()
 			return
 		}
+		log.Printf("AuthRequired: User %v found in session. Request path: %s", user, c.Request.URL.Path)
 		c.Next()
 	}
 }
