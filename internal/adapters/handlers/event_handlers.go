@@ -45,10 +45,11 @@ func (h *EventHandlers) ListEvents(c *gin.Context) {
 	navbar := components.NavBar(user, csrfToken)
 
 	c.HTML(http.StatusOK, "events.tmpl", gin.H{
-		"title":  "Mes Événements",
-		"navbar": navbar,
-		"user":   user,
-		"events": events,
+		"title":      "Mes Événements",
+		"navbar":     navbar,
+		"user":       user,
+		"events":     events,
+		"csrf_token": csrfToken, // Ajout du jeton CSRF au contexte du template
 	})
 }
 

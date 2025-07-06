@@ -9,7 +9,7 @@
 <body>
     {{.navbar|safe}}
 
-    <form action="/events/new" method="POST" class="form-container"> <!-- Nouvelle classe -->
+    <form action="{{if .event.ID}}/events/edit/{{.event.ID}}{{else}}/events/new{{end}}" method="POST" class="form-container"> <!-- Nouvelle classe -->
         <h2>{{.title}}</h2>
         <input type="hidden" name="_csrf" value="{{.csrf_token}}">
 

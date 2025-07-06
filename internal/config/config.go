@@ -50,7 +50,7 @@ func LoadConfig() (*Config, error) {
 		SMTPPort:     getEnvAsInt("SMTP_PORT", 587), // Default SMTP port
 		SMTPUsername: os.Getenv("SMTP_USERNAME"),
 		SMTPPassword: os.Getenv("SMTP_PASSWORD"),
-		EmailSender:  getEnv("EMAIL_SENDER", "no-reply@example.com"),
+		EmailSender:  getEnv("EMAIL_SENDER", "no-reply@assoss.com"),
 	}
 
 	if cfg.ClientID == "" || cfg.ClientSecret == "" {
