@@ -3,69 +3,20 @@
 <head>
     <title>{{.title}}</title>
     <link rel="stylesheet" href="/static/css/main.css">
+    <link rel="stylesheet" href="/static/css/pages.css"> <!-- Nouveau fichier CSS -->
     <link rel="stylesheet" href="/static/css/fontawesome/fontawesome-free-6.5.1-web/css/all.min.css">
-    <style>
-        .members-container {
-            max-width: 900px;
-            margin: 20px auto;
-            padding: 20px;
-            background-color: var(--container-color);
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        }
-        .members-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-        .members-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-        }
-        .members-table th, .members-table td {
-            border: 1px solid var(--border-color);
-            padding: 10px;
-            text-align: left;
-        }
-        .members-table th {
-            background-color: var(--main-comp-color);
-            font-weight: bold;
-        }
-        .members-table tr:nth-child(even) {
-            background-color: var(--main-color);
-        }
-        .members-table .actions a, .members-table .actions button {
-            margin-right: 5px;
-            padding: 5px 10px;
-            border-radius: 4px;
-            text-decoration: none;
-            font-size: 0.9em;
-        }
-        .members-table .actions a.edit-btn {
-            background-color: var(--primary-color);
-            color: white;
-        }
-        .members-table .actions button.delete-btn {
-            background-color: #dc3545;
-            color: white;
-            border: none;
-            cursor: pointer;
-        }
-    </style>
 </head>
 <body>
     {{.navbar|safe}}
 
-    <div class="members-container">
-        <div class="members-header">
+    <div class="page-container"> <!-- Nouvelle classe -->
+        <div class="page-header"> <!-- Nouvelle classe -->
             <h1>{{.title}}</h1>
-            <a href="/members/new" class="btn btn-primary">Ajouter un membre</a>
+            <a href="/members/new" class="btn btn-primary add-member-btn">Ajouter un membre</a>
         </div>
 
         {{if .members}}
-        <table class="members-table">
+        <table class="data-table"> <!-- Nouvelle classe -->
             <thead>
                 <tr>
                     <th>Prénom</th>
@@ -73,6 +24,7 @@
                     <th>Email</th>
                     <th>Statut</th>
                     <th>Date d'adhésion</th>
+                    <th>Dernier paiement</th>
                     <th>Actions</th>
                 </tr>
             </thead>
@@ -84,11 +36,22 @@
                     <td>{{.Email}}</td>
                     <td>{{.MembershipStatus}}</td>
                     <td>{{.JoinDate.Format "02/01/2006"}}</td>
-                    <td class="actions">
+                    <td>
+                        {{if .LastPaymentDate}}
+                            {{.LastPaymentDate.Format "02/01/2006"}}
+                        {{else}}
+                            N/A
+                        {{end}}
+                    </td>
+                    <td class="actions-cell"> <!-- Nouvelle classe -->
                         <a href="/members/edit/{{.ID}}" class="edit-btn">Modifier</a>
                         <form action="/members/delete/{{.ID}}" method="POST" style="display:inline;">
                             <input type="hidden" name="_csrf" value="{{$.csrf_token}}">
                             <button type="submit" class="delete-btn" onclick="return confirm('Êtes-vous sûr de vouloir supprimer ce membre ?');">Supprimer</button>
+                        </form>
+                        <form action="/members/mark-payment/{{.ID}}" method="POST" style="display:inline;">
+                            <input type="hidden" name="_csrf" value="{{$.csrf_token}}">
+                            <button type="submit" class="mark-payment-btn" onclick="return confirm('Marquer le paiement pour ce membre ?');">Marquer paiement</button>
                         </form>
                     </td>
                 </tr>
@@ -96,7 +59,7 @@
             </tbody>
         </table>
         {{else}}
-        <p>Aucun membre trouvé. <a href="/members/new">Ajoutez-en un maintenant !</a></p>
+        <p class="no-data-message">Aucun membre trouvé. <a href="/members/new">Ajoutez-en un maintenant !</a></p>
         {{end}}
     </div>
 

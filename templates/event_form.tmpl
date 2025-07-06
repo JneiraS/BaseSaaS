@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{{.title}}</title>
+    <link rel="stylesheet" href="/static/css/main.css">
+    <link rel="stylesheet" href="/static/css/pages.css"> <!-- Nouveau fichier CSS -->
+    <link rel="stylesheet" href="/static/css/fontawesome/fontawesome-free-6.5.1-web/css/all.min.css">
+</head>
+<body>
+    {{.navbar|safe}}
+
+    <form action="{{if .event.ID}}/events/edit/{{.event.ID}}{{else}}/events/new{{end}}" method="POST" class="form-container"> <!-- Nouvelle classe -->
+        <h2>{{.title}}</h2>
+        <input type="hidden" name="_csrf" value="{{.csrf_token}}">
+
+        <div class="form-group">
+            <label for="title" class="form-label">Titre:</label>
+            <input type="text" id="title" name="title" value="{{.event.Title}}" required class="form-control">
+        </div>
+        <div class="form-group">
+            <label for="description" class="form-label">Description:</label>
+            <textarea id="description" name="description" required class="form-control">{{.event.Description}}</textarea>
+        </div>
+        <div class="form-group">
+            <label for="start_date" class="form-label">Date et heure de début:</label>
+            <input type="datetime-local" id="start_date" name="start_date" value="{{.event.StartDate.Format "2006-01-02T15:04"}}" required class="form-control">
+        </div>
+        <div class="form-group">
+            <label for="end_date" class="form-label">Date et heure de fin:</label>
+            <input type="datetime-local" id="end_date" name="end_date" value="{{.event.EndDate.Format "2006-01-02T15:04"}}" required class="form-control">
+        </div>
+
+        <button type="submit" class="form-submit-btn">Enregistrer l'événement</button> <!-- Nouvelle classe -->
+    </form>
+
+    <script src="/static/js/theme.js"></script>
+</body>
+</html>

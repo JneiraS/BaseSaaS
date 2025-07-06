@@ -17,6 +17,7 @@ type MemberDB struct {
 	MembershipStatus models.MembershipStatus
 	JoinDate         time.Time
 	EndDate          *time.Time
+	LastPaymentDate  *time.Time
 }
 
 // TableName spécifie le nom de la table pour le modèle MemberDB.
@@ -31,6 +32,9 @@ type MemberRepository interface {
 	FindMembersByUserID(userID uint) ([]models.Member, error)
 	UpdateMember(member *models.Member) error
 	DeleteMember(id uint) error
+	UpdateLastPaymentDate(memberID uint, date time.Time) error
+	GetTotalMembersCount(userID uint) (int64, error)
+	GetMembersCountByStatus(userID uint) (map[models.MembershipStatus]int64, error)
 }
 
 // GormMemberRepository est une implémentation de MemberRepository utilisant GORM.
@@ -87,6 +91,46 @@ func (r *GormMemberRepository) DeleteMember(id uint) error {
 	return r.db.Delete(&MemberDB{}, id).Error
 }
 
+// UpdateLastPaymentDate met à jour la date du dernier paiement pour un membre.
+func (r *GormMemberRepository) UpdateLastPaymentDate(memberID uint, date time.Time) error {
+	return r.db.Model(&MemberDB{}).Where("id = ?", memberID).Update("last_payment_date", date).Error
+}
+
+// GetTotalMembersCount retourne le nombre total de membres pour un utilisateur donné.
+func (r *GormMemberRepository) GetTotalMembersCount(userID uint) (int64, error) {
+	var count int64
+	if err := r.db.Model(&MemberDB{}).Where("user_id = ?", userID).Count(&count).Error; err != nil {
+		return 0, err
+	}
+	return count, nil
+}
+
+// GetMembersCountByStatus retourne le nombre de membres par statut pour un utilisateur donné.
+func (r *GormMemberRepository) GetMembersCountByStatus(userID uint) (map[models.MembershipStatus]int64, error) {
+	counts := make(map[models.MembershipStatus]int64)
+	var results []struct {
+		MembershipStatus models.MembershipStatus
+		Count            int64
+	}
+
+	if err := r.db.Model(&MemberDB{}).Where("user_id = ?", userID).Group("membership_status").Select("membership_status, count(*) as count").Scan(&results).Error; err != nil {
+		return nil, err
+	}
+
+	for _, res := range results {
+		counts[res.MembershipStatus] = res.Count
+	}
+
+	// Assurez-vous que tous les statuts possibles sont présents, même avec un count de 0
+	for _, status := range []models.MembershipStatus{models.StatusActive, models.StatusInactive, models.StatusPending, models.StatusExpired} {
+		if _, ok := counts[status]; !ok {
+			counts[status] = 0
+		}
+	}
+
+	return counts, nil
+}
+
 // toMemberDB convertit un modèle de domaine Member en un modèle de base de données MemberDB.
 func toMemberDB(m *models.Member) *MemberDB {
 	return &MemberDB{
@@ -98,6 +142,7 @@ func toMemberDB(m *models.Member) *MemberDB {
 		MembershipStatus: m.MembershipStatus,
 		JoinDate:         m.JoinDate,
 		EndDate:          m.EndDate,
+		LastPaymentDate:  m.LastPaymentDate,
 	}
 }
 
@@ -112,5 +157,6 @@ func toMember(mdb *MemberDB) *models.Member {
 		MembershipStatus: mdb.MembershipStatus,
 		JoinDate:         mdb.JoinDate,
 		EndDate:          mdb.EndDate,
+		LastPaymentDate:  mdb.LastPaymentDate,
 	}
 }

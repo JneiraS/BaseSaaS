@@ -30,5 +30,6 @@ type Member struct {
 
 	MembershipStatus MembershipStatus `json:"membership_status" form:"membership_status"`
 	JoinDate         time.Time        `json:"join_date" form:"join_date" time_format:"2006-01-02"`
-	EndDate          *time.Time       `json:"end_date,omitempty" form:"end_date" time_format:"2006-01-02"` // Pointeur pour autoriser les valeurs nulles
+	EndDate          *time.Time       `json:"end_date,omitempty" form:"end_date" time_format:"2006-01-02"`                   // Pointeur pour autoriser les valeurs nulles
+	LastPaymentDate  *time.Time       `json:"last_payment_date,omitempty" form:"last_payment_date" time_format:"2006-01-02"` // Date du dernier paiement
 }

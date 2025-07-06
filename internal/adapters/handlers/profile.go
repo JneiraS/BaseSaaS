@@ -11,8 +11,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-
-
 // Page profil (protégée)
 func (app *App) ProfileHandler(c *gin.Context) {
 	session := c.MustGet("session").(sessions.Session)
@@ -23,7 +21,7 @@ func (app *App) ProfileHandler(c *gin.Context) {
 		return
 	}
 	csrfToken := c.MustGet("csrf_token").(string)
-	navbar := components.NavBar(user, csrfToken)
+	navbar := components.NavBar(user, csrfToken, session)
 
 	c.HTML(http.StatusOK, "profile.tmpl", gin.H{
 		"title":      "Profil",
@@ -31,6 +29,10 @@ func (app *App) ProfileHandler(c *gin.Context) {
 		"navbar":     navbar,
 		"csrf_token": csrfToken,
 	})
+	if err := session.Save(); err != nil {
+		// Gérer l'erreur de sauvegarde de session si nécessaire
+		// log.Printf("Erreur lors de la sauvegarde de session dans ProfileHandler: %v", err)
+	}
 }
 
 // UpdateProfileHandler gère la mise à jour du profil utilisateur (version améliorée)

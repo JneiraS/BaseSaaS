@@ -1,0 +1,226 @@
+/* Styles spécifiques aux pages Membres et Événements */
+
+body {
+    width: 70%;
+    max-width: 90%
+}
+
+.page-container {
+    margin: 30px auto;
+    padding: 20px;
+    background-color: var(--container-color);
+    border-radius: 8px;
+    box-shadow: var(--shadow-md);
+}
+
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.btn.btn-primary.add-member-btn,
+.btn.btn-primary.add-event-btn,
+.btn.btn-primary.upload-btn {
+    width: fit-content;
+}
+
+.page-header h1 {
+    font-size: 2.2rem;
+    color: var(--font-color);
+    margin: 0;
+}
+
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+
+.data-table th,
+.data-table td {
+    border: 1px solid var(--border-color);
+    padding: 12px;
+    text-align: left;
+    color: var(--font-color);
+}
+
+.data-table th {
+    background-color: var(--main-comp-color);
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.9em;
+}
+
+.data-table tr:nth-child(even) {
+    background-color: color-mix(in srgb, var(--main-color) 5%, transparent);
+}
+
+.data-table tr:hover {
+    background-color: color-mix(in srgb, var(--primary-color) 5%, transparent);
+}
+
+.actions-cell {
+    white-space: nowrap;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.actions-cell a,
+.actions-cell button {
+    margin-right: 8px;
+    padding: 8px 12px;
+    border-radius: 6px;
+    text-decoration: none;
+    font-size: 0.85em;
+    transition: all 0.2s ease;
+}
+
+.actions-cell a.edit-btn {
+    background-color: var(--primary-color);
+    color: var(--font-dark-color);
+    margin: 5px;
+}
+
+.actions-cell a.edit-btn:hover {
+    background-color: var(--primary-color-hover);
+}
+
+.actions-cell button.delete-btn {
+    background-color: #dc3545;
+    /* Rouge pour supprimer */
+    color: white;
+    border: none;
+    cursor: pointer;
+    margin: 5px;
+}
+
+.actions-cell button.delete-btn:hover {
+    background-color: #c82333;
+}
+
+.actions-cell button.mark-payment-btn {
+    background-color: #28a745;
+    /* Vert pour paiement */
+    color: white;
+    border: none;
+    cursor: pointer;
+}
+
+.actions-cell button.mark-payment-btn:hover {
+    background-color: #218838;
+}
+
+.no-data-message {
+    text-align: center;
+    padding: 40px;
+    font-size: 1.1em;
+    color: var(--font-color);
+    opacity: 0.8;
+}
+
+.form-container {
+    max-width: 600px;
+    margin: 30px auto;
+    padding: 25px;
+    background-color: var(--container-color);
+    border-radius: 8px;
+    box-shadow: var(--shadow-md);
+}
+
+.form-container h2 {
+    font-size: 2rem;
+    color: var(--font-color);
+    margin-bottom: 25px;
+    text-align: center;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: var(--font-color);
+    font-size: 0.95rem;
+}
+
+.form-control {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid var(--border-color-input);
+    border-radius: 6px;
+    background-color: var(--main-color);
+    color: var(--font-color);
+    font-size: 1rem;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary-color) 30%, transparent);
+}
+
+textarea.form-control {
+    min-height: 100px;
+    resize: vertical;
+}
+
+.form-submit-btn {
+    display: block;
+    width: 100%;
+    padding: 12px 20px;
+    margin-top: 25px;
+    font-size: 1.1em;
+    font-weight: 600;
+    color: var(--font-dark-color);
+    background-color: var(--primary-color);
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.2s ease, transform 0.2s ease;
+}
+
+.form-submit-btn:hover {
+    background-color: var(--primary-color-hover);
+    transform: translateY(-2px);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+
+    .page-container,
+    .form-container {
+        margin: 20px 15px;
+        padding: 15px;
+        width: 10%;
+    }
+
+    .page-header h1 {
+        font-size: 1.8rem;
+    }
+
+    .data-table th,
+    .data-table td {
+        padding: 8px;
+        font-size: 0.85em;
+    }
+
+    .actions-cell a,
+    .actions-cell button {
+        padding: 6px 10px;
+        font-size: 0.8em;
+        margin-right: 5px;
+        margin-bottom: 5px;
+        /* Add some vertical spacing */
+        display: inline-block;
+        /* Allow them to wrap */
+    }
+}
