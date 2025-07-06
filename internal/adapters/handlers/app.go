@@ -30,9 +30,11 @@ type App struct {
 	memberService  *services.MemberService
 	eventService   *services.EventService
 	emailService   *services.EmailService
+	financeService *services.FinanceService
 	memberHandlers *MemberHandlers
 	eventHandlers  *EventHandlers
-	communicationHandlers *CommunicationHandlers // Ajout des handlers de communication
+	communicationHandlers *CommunicationHandlers
+	financeHandlers *FinanceHandlers // Ajout des handlers financiers
 	db             *gorm.DB
 	router         *gin.Engine
 	cfg            *config.Config
@@ -64,13 +66,15 @@ func NewApp() (*App, error) {
 	eventRepo := repositories.NewGormEventRepository(app.db) // Créez le repo d'événements
 	app.eventService = services.NewEventService(eventRepo) // Initialisez le service d'événements
 	app.emailService = services.NewEmailService(app.cfg) // Initialisez le service d'e-mail
+	transactionRepo := repositories.NewGormTransactionRepository(app.db) // Créez le repo de transactions
+	app.financeService = services.NewFinanceService(transactionRepo) // Initialisez le service financier
 
 	// L'authentification est optionnelle, le serveur peut démarrer sans.
 	if err := app.initOIDCProvider(); err != nil {
 		log.Printf("AVERTISSEMENT: Authentification indisponible: %v", err)
 	}
 
-	if err := app.db.AutoMigrate(&repositories.UserDB{}, &repositories.MemberDB{}, &repositories.EventDB{}); err != nil {
+	if err := app.db.AutoMigrate(&repositories.UserDB{}, &repositories.MemberDB{}, &repositories.EventDB{}, &repositories.TransactionDB{}); err != nil {
 		return nil, fmt.Errorf("failed to migrate database: %w", err)
 	}
 	log.Println("Database migration completed.")
@@ -79,6 +83,7 @@ func NewApp() (*App, error) {
 	app.memberHandlers = NewMemberHandlers(app.memberService) // Initialisez les handlers de membres
 	app.eventHandlers = NewEventHandlers(app.eventService) // Initialisez les handlers d'événements
 	app.communicationHandlers = NewCommunicationHandlers(app.emailService, app.memberService) // Initialisez les handlers de communication
+	app.financeHandlers = NewFinanceHandlers(app.financeService) // Initialisez les handlers financiers
 
 	router := app.setupServer()
 	app.setupRoutes(router)
@@ -184,6 +189,14 @@ func (app *App) setupRoutes(r *gin.Engine) {
 	// Routes pour la communication
 	r.GET("/communication/email", app.authRequired(), app.communicationHandlers.ShowEmailForm)
 	r.POST("/communication/email", app.authRequired(), app.communicationHandlers.SendEmailToMembers)
+
+	// Routes pour la gestion financière
+	r.GET("/finance/transactions", app.authRequired(), app.financeHandlers.ListTransactions)
+	r.GET("/finance/transactions/new", app.authRequired(), app.financeHandlers.ShowCreateTransactionForm)
+	r.POST("/finance/transactions/new", app.authRequired(), app.financeHandlers.CreateTransaction)
+	r.GET("/finance/transactions/edit/:id", app.authRequired(), app.financeHandlers.ShowEditTransactionForm)
+	r.POST("/finance/transactions/edit/:id", app.authRequired(), app.financeHandlers.UpdateTransaction)
+	r.POST("/finance/transactions/delete/:id", app.authRequired(), app.financeHandlers.DeleteTransaction)
 
 	// Les routes d'authentification ne sont actives que si le service OIDC est configuré.
 	if app.authService != nil {

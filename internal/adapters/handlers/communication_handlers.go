@@ -90,11 +90,5 @@ func (h *CommunicationHandlers) SendEmailToMembers(c *gin.Context) {
 	}
 
 	log.Printf("INFO: E-mail envoyé avec succès à %d membres.", len(recipientEmails))
-	c.HTML(http.StatusOK, "email_form.tmpl", gin.H{
-		"title":      "Envoyer un e-mail aux membres",
-		"navbar":     components.NavBar(user, c.MustGet("csrf_token").(string)),
-		"user":       user,
-		"csrf_token": c.MustGet("csrf_token").(string),
-		"message":    "E-mail envoyé avec succès !",
-	})
+	c.Redirect(http.StatusFound, "/profile")
 }

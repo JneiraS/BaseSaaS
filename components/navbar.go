@@ -55,6 +55,7 @@ func containerButton() gom.Node {
 			gomh.A(gom.Text("Mes membres"), gom.Attr("href", "/members")),
 			gomh.A(gom.Text("Mes événements"), gom.Attr("href", "/events")),
 			gomh.A(gom.Text("Communication"), gom.Attr("href", "/communication/email")),
+			gomh.A(gom.Text("Finance"), gom.Attr("href", "/finance/transactions")),
 			gomh.A(gom.Text("Mes favoris"), gom.Attr("href", "/favoris")),
 			gomh.A(gom.Text("Mes commandes"), gom.Attr("href", "/commandes")),
 		),
