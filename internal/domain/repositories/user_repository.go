@@ -10,7 +10,7 @@ import (
 // UserDB représente le modèle utilisateur pour la persistance GORM.
 type UserDB struct {
 	gorm.Model
-	OIDCID         string    `gorm:"column:oidc_id;uniqueIndex"`
+	OIDCID         string `gorm:"column:oidc_id;uniqueIndex"`
 	Email          string
 	Name           string
 	Username       string

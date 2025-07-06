@@ -74,7 +74,7 @@ func (h *StatisticsHandlers) GetMemberStats(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"total_members":    totalMembers,
+		"total_members":     totalMembers,
 		"members_by_status": membersByStatus,
 	})
 }

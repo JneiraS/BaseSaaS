@@ -92,4 +92,3 @@ func (s *DocumentService) DeleteDocument(documentID uint) error {
 func (s *DocumentService) GetTotalDocumentsCount(userID uint) (int64, error) {
 	return s.documentRepo.GetTotalDocumentsCount(userID)
 }
-

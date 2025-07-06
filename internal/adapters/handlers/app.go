@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"encoding/json" // Ajoutez cette ligne
 	"fmt"
 	"html/template"
 	"log"
@@ -24,26 +25,26 @@ import (
 
 // App encapsule les dépendances de l'application.
 type App struct {
-	authService    *services.AuthService
-	authHandlers   *AuthHandlers
-	profileService *services.ProfileService
-	memberService  *services.MemberService
-	eventService   *services.EventService
-	emailService   *services.EmailService
-	financeService *services.FinanceService
-	documentService *services.DocumentService
-	pollService    *services.PollService
-	memberHandlers *MemberHandlers
-	eventHandlers  *EventHandlers
+	authService           *services.AuthService
+	authHandlers          *AuthHandlers
+	profileService        *services.ProfileService
+	memberService         *services.MemberService
+	eventService          *services.EventService
+	emailService          *services.EmailService
+	financeService        *services.FinanceService
+	documentService       *services.DocumentService
+	pollService           *services.PollService
+	memberHandlers        *MemberHandlers
+	eventHandlers         *EventHandlers
 	communicationHandlers *CommunicationHandlers
-	financeHandlers *FinanceHandlers
-	documentHandlers *DocumentHandlers
-	statisticsHandlers *StatisticsHandlers
-	pollHandlers   *PollHandlers // Ajout des handlers de sondages
-	db             *gorm.DB
-	router         *gin.Engine
-	cfg            *config.Config
-	userRepo       repositories.UserRepository
+	financeHandlers       *FinanceHandlers
+	documentHandlers      *DocumentHandlers
+	statisticsHandlers    *StatisticsHandlers
+	pollHandlers          *PollHandlers // Ajout des handlers de sondages
+	db                    *gorm.DB
+	router                *gin.Engine
+	cfg                   *config.Config
+	userRepo              repositories.UserRepository
 }
 
 // NewApp crée et initialise une nouvelle instance de l'application.
@@ -67,17 +68,17 @@ func NewApp() (*App, error) {
 	memberRepo := repositories.NewGormMemberRepository(app.db) // Créez le repo de membres
 
 	app.profileService = services.NewProfileService(app.userRepo)
-	app.memberService = services.NewMemberService(memberRepo) // Initialisez le service de membres
-	eventRepo := repositories.NewGormEventRepository(app.db) // Créez le repo d'événements
-	app.eventService = services.NewEventService(eventRepo) // Initialisez le service d'événements
-	app.emailService = services.NewEmailService(app.cfg) // Initialisez le service d'e-mail
-	transactionRepo := repositories.NewGormTransactionRepository(app.db) // Créez le repo de transactions
-	app.financeService = services.NewFinanceService(transactionRepo) // Initialisez le service financier
-	documentRepo := repositories.NewGormDocumentRepository(app.db) // Créez le repo de documents
+	app.memberService = services.NewMemberService(memberRepo)                // Initialisez le service de membres
+	eventRepo := repositories.NewGormEventRepository(app.db)                 // Créez le repo d'événements
+	app.eventService = services.NewEventService(eventRepo)                   // Initialisez le service d'événements
+	app.emailService = services.NewEmailService(app.cfg)                     // Initialisez le service d'e-mail
+	transactionRepo := repositories.NewGormTransactionRepository(app.db)     // Créez le repo de transactions
+	app.financeService = services.NewFinanceService(transactionRepo)         // Initialisez le service financier
+	documentRepo := repositories.NewGormDocumentRepository(app.db)           // Créez le repo de documents
 	app.documentService = services.NewDocumentService(documentRepo, app.cfg) // Initialisez le service de documents
-	pollRepo := repositories.NewGormPollRepository(app.db) // Créez le repo de sondages
-	voteRepo := repositories.NewGormVoteRepository(app.db) // Créez le repo de votes
-	app.pollService = services.NewPollService(pollRepo, voteRepo) // Initialisez le service de sondages
+	pollRepo := repositories.NewGormPollRepository(app.db)                   // Créez le repo de sondages
+	voteRepo := repositories.NewGormVoteRepository(app.db)                   // Créez le repo de votes
+	app.pollService = services.NewPollService(pollRepo, voteRepo)            // Initialisez le service de sondages
 
 	// L'authentification est optionnelle, le serveur peut démarrer sans.
 	if err := app.initOIDCProvider(); err != nil {
@@ -90,13 +91,13 @@ func NewApp() (*App, error) {
 	log.Println("Database migration completed.")
 
 	app.authHandlers = NewAuthHandlers(app.authService, app.cfg)
-	app.memberHandlers = NewMemberHandlers(app.memberService) // Initialisez les handlers de membres
-	app.eventHandlers = NewEventHandlers(app.eventService) // Initialisez les handlers d'événements
-	app.communicationHandlers = NewCommunicationHandlers(app.emailService, app.memberService) // Initialisez les handlers de communication
-	app.financeHandlers = NewFinanceHandlers(app.financeService) // Initialisez les handlers financiers
-	app.documentHandlers = NewDocumentHandlers(app.documentService) // Initialisez les handlers de documents
+	app.memberHandlers = NewMemberHandlers(app.memberService)                                                                    // Initialisez les handlers de membres
+	app.eventHandlers = NewEventHandlers(app.eventService)                                                                       // Initialisez les handlers d'événements
+	app.communicationHandlers = NewCommunicationHandlers(app.emailService, app.memberService)                                    // Initialisez les handlers de communication
+	app.financeHandlers = NewFinanceHandlers(app.financeService)                                                                 // Initialisez les handlers financiers
+	app.documentHandlers = NewDocumentHandlers(app.documentService)                                                              // Initialisez les handlers de documents
 	app.statisticsHandlers = NewStatisticsHandlers(app.memberService, app.financeService, app.eventService, app.documentService) // Initialisez les handlers de statistiques
-	app.pollHandlers = NewPollHandlers(app.pollService) // Initialisez les handlers de sondages
+	app.pollHandlers = NewPollHandlers(app.pollService)                                                                          // Initialisez les handlers de sondages
 
 	router := app.setupServer()
 	app.setupRoutes(router)
@@ -153,7 +154,7 @@ func (app *App) setupServer() *gin.Engine {
 	})
 
 	r.Use(sessions.Sessions(app.cfg.CookieName, store))
-		r.Use(middleware.CSRFProtection(app.cfg))
+	r.Use(middleware.CSRFProtection(app.cfg))
 	r.Use(middleware.ContextInjector())
 
 	// Permet d'utiliser `{{ safe .variable }}` dans les templates pour afficher du HTML.
@@ -182,6 +183,32 @@ func (app *App) setupServer() *gin.Engine {
 			default:
 				return 0.0
 			}
+		},
+		"percentage": func(part, total int64) float64 {
+			if total == 0 {
+				return 0
+			}
+			return float64(part) / float64(total) * 100
+		},
+		"formatPercent": func(part, total int64) string {
+			if total == 0 {
+				return "0%"
+			}
+			percent := float64(part) / float64(total) * 100
+			return fmt.Sprintf("%.1f%%", percent)
+		},
+		"json": func(v interface{}) (template.JS, error) {
+			jsonBytes, err := json.Marshal(v)
+			if err != nil {
+				return "", err
+			}
+			return template.JS(jsonBytes), nil
+		},
+		"string": func(i interface{}) string {
+			return fmt.Sprintf("%v", i)
+		},
+		"int": func(f float64) int64 {
+			return int64(f)
 		},
 	})
 

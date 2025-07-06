@@ -7,8 +7,8 @@ import (
 // Poll représente un sondage créé par un utilisateur.
 type Poll struct {
 	gorm.Model
-	Question string `json:"question" form:"question"`
-	UserID   uint   `json:"user_id"` // L'utilisateur qui a créé le sondage
+	Question string   `json:"question" form:"question"`
+	UserID   uint     `json:"user_id"`           // L'utilisateur qui a créé le sondage
 	Options  []Option `gorm:"foreignKey:PollID"` // Les options de vote pour ce sondage
 }
 
@@ -16,7 +16,7 @@ type Poll struct {
 type Option struct {
 	gorm.Model
 	Text   string `json:"text" form:"text"`
-	PollID uint   `json:"poll_id"` // L'ID du sondage auquel cette option appartient
+	PollID uint   `json:"poll_id"`             // L'ID du sondage auquel cette option appartient
 	Votes  []Vote `gorm:"foreignKey:OptionID"` // Les votes pour cette option
 }
 
