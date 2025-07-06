@@ -29,8 +29,10 @@ type App struct {
 	profileService *services.ProfileService
 	memberService  *services.MemberService
 	eventService   *services.EventService
+	emailService   *services.EmailService
 	memberHandlers *MemberHandlers
-	eventHandlers  *EventHandlers // Ajout des handlers d'événements
+	eventHandlers  *EventHandlers
+	communicationHandlers *CommunicationHandlers // Ajout des handlers de communication
 	db             *gorm.DB
 	router         *gin.Engine
 	cfg            *config.Config
@@ -61,6 +63,7 @@ func NewApp() (*App, error) {
 	app.memberService = services.NewMemberService(memberRepo) // Initialisez le service de membres
 	eventRepo := repositories.NewGormEventRepository(app.db) // Créez le repo d'événements
 	app.eventService = services.NewEventService(eventRepo) // Initialisez le service d'événements
+	app.emailService = services.NewEmailService(app.cfg) // Initialisez le service d'e-mail
 
 	// L'authentification est optionnelle, le serveur peut démarrer sans.
 	if err := app.initOIDCProvider(); err != nil {
@@ -75,6 +78,7 @@ func NewApp() (*App, error) {
 	app.authHandlers = NewAuthHandlers(app.authService, app.cfg)
 	app.memberHandlers = NewMemberHandlers(app.memberService) // Initialisez les handlers de membres
 	app.eventHandlers = NewEventHandlers(app.eventService) // Initialisez les handlers d'événements
+	app.communicationHandlers = NewCommunicationHandlers(app.emailService, app.memberService) // Initialisez les handlers de communication
 
 	router := app.setupServer()
 	app.setupRoutes(router)
@@ -176,6 +180,10 @@ func (app *App) setupRoutes(r *gin.Engine) {
 	r.GET("/events/edit/:id", app.authRequired(), app.eventHandlers.ShowEditEventForm)
 	r.POST("/events/edit/:id", app.authRequired(), app.eventHandlers.UpdateEvent)
 	r.POST("/events/delete/:id", app.authRequired(), app.eventHandlers.DeleteEvent)
+
+	// Routes pour la communication
+	r.GET("/communication/email", app.authRequired(), app.communicationHandlers.ShowEmailForm)
+	r.POST("/communication/email", app.authRequired(), app.communicationHandlers.SendEmailToMembers)
 
 	// Les routes d'authentification ne sont actives que si le service OIDC est configuré.
 	if app.authService != nil {

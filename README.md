@@ -51,6 +51,11 @@ Ouvrez ensuite le fichier `.env` et renseignez les valeurs requises :
 - `CLIENT_ID` : L'ID client de votre fournisseur OIDC.
 - `CLIENT_SECRET` : Le secret client de votre fournisseur OIDC.
 - `SESSION_SECRET` : Une chaîne de caractères aléatoire pour sécuriser les sessions.
+- `SMTP_HOST` : L'hôte de votre serveur SMTP (ex: `smtp.mailtrap.io`).
+- `SMTP_PORT` : Le port de votre serveur SMTP (ex: `2525`).
+- `SMTP_USERNAME` : Le nom d'utilisateur pour l'authentification SMTP.
+- `SMTP_PASSWORD` : Le mot de passe pour l'authentification SMTP.
+- `EMAIL_SENDER` : L'adresse e-mail de l'expéditeur (ex: `no-reply@yourdomain.com`).
 
 ### 3. Installer les Dépendances
 
