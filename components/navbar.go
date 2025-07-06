@@ -1,6 +1,8 @@
 package components
 
 import (
+	"log"
+
 	"github.com/JneiraS/BaseSasS/components/elements"
 	"github.com/gin-contrib/sessions"
 	gom "maragu.dev/gomponents"
@@ -8,6 +10,7 @@ import (
 )
 
 func NavBar(user any, csrfToken string, session sessions.Session) gom.Node {
+	log.Printf("DEBUG: NavBar called. User: %v", user != nil)
 	logoElement := gomh.A(
 		gomh.Class("navbar-brand"),
 		gom.Text("🚀"),
@@ -35,11 +38,14 @@ func NavBar(user any, csrfToken string, session sessions.Session) gom.Node {
 	divArgs = append(divArgs, gomh.Class("ctn-btn"))
 	divArgs = append(divArgs, ctnBtnContent...)
 
+	flashNodes := FlashMessages(session)
+	log.Printf("DEBUG: FlashMessages generated.")
+
 	return gomh.Section(
 		gomh.Class("navbar"),
 		logoElement,
 		gomh.Div(divArgs...),
-		FlashMessages(session), // Toujours inclure les messages flash ici
+		flashNodes,
 	)
 }
 
@@ -68,10 +74,22 @@ func containerButton() gom.Node {
 	)
 }
 func FlashMessages(session sessions.Session) gom.Node {
+	log.Printf("DEBUG: FlashMessages function called.")
+	successFlashes := session.Flashes("success")
+	errorFlashes := session.Flashes("error")
+	warningFlashes := session.Flashes("warning")
+
+	log.Printf("DEBUG: Flashes - Success: %v, Error: %v, Warning: %v", successFlashes, errorFlashes, warningFlashes)
+
+	// Sauvegarder la session après avoir lu les flashs
+	if err := session.Save(); err != nil {
+		log.Printf("ERREUR: Erreur lors de la sauvegarde de la session après lecture des flashs dans FlashMessages: %v", err)
+	}
+
 	return gomh.Div(
 		gomh.Class("flash-message-container"),
 		gom.Group(
-			gom.Map(session.Flashes("success"), func(success interface{}) gom.Node {
+			gom.Map(successFlashes, func(success interface{}) gom.Node {
 				return gomh.Div(
 					gomh.Class("flash-message success"),
 					gom.Text(success.(string)),
@@ -79,7 +97,7 @@ func FlashMessages(session sessions.Session) gom.Node {
 			}),
 		),
 		gom.Group(
-			gom.Map(session.Flashes("error"), func(err interface{}) gom.Node {
+			gom.Map(errorFlashes, func(err interface{}) gom.Node {
 				return gomh.Div(
 					gomh.Class("flash-message error"),
 					gom.Text(err.(string)),
@@ -87,7 +105,7 @@ func FlashMessages(session sessions.Session) gom.Node {
 			}),
 		),
 		gom.Group(
-			gom.Map(session.Flashes("warning"), func(warning interface{}) gom.Node {
+			gom.Map(warningFlashes, func(warning interface{}) gom.Node {
 				return gomh.Div(
 					gomh.Class("flash-message warning"),
 					gom.Text(warning.(string)),
