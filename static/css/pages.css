@@ -1,7 +1,7 @@
 /* Styles spécifiques aux pages Membres et Événements */
 
 body {
-    width: fit-content;
+    width: 70%;
     max-width: 90%
 }
 
@@ -23,7 +23,8 @@ body {
 }
 
 .btn.btn-primary.add-member-btn,
-.btn.btn-primary.add-event-btn {
+.btn.btn-primary.add-event-btn,
+.btn.btn-primary.upload-btn {
     width: fit-content;
 }
 

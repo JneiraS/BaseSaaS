@@ -42,7 +42,7 @@ func (h *MemberHandlers) ListMembers(c *gin.Context) {
 
 	// Récupérer le jeton CSRF pour la navbar
 	csrfToken := c.MustGet("csrf_token").(string)
-	navbar := components.NavBar(user, csrfToken)
+	navbar := components.NavBar(user, csrfToken, session)
 
 	c.HTML(http.StatusOK, "members.tmpl", gin.H{
 		"title":      "Mes Membres",
@@ -51,6 +51,10 @@ func (h *MemberHandlers) ListMembers(c *gin.Context) {
 		"members":    members,
 		"csrf_token": csrfToken, // Ajout du jeton CSRF au contexte du template
 	})
+	if err := session.Save(); err != nil {
+		// Gérer l'erreur de sauvegarde de session si nécessaire
+		// log.Printf("Erreur lors de la sauvegarde de session dans ListMembers: %v", err)
+	}
 }
 
 // ShowCreateMemberForm affiche le formulaire de création d'un nouveau membre.
@@ -63,7 +67,7 @@ func (h *MemberHandlers) ShowCreateMemberForm(c *gin.Context) {
 	}
 
 	csrfToken := c.MustGet("csrf_token").(string)
-	navbar := components.NavBar(user, csrfToken)
+	navbar := components.NavBar(user, csrfToken, session)
 
 	c.HTML(http.StatusOK, "member_form.tmpl", gin.H{
 		"title":      "Ajouter un nouveau membre",
@@ -72,6 +76,10 @@ func (h *MemberHandlers) ShowCreateMemberForm(c *gin.Context) {
 		"csrf_token": csrfToken,
 		"member":     models.Member{MembershipStatus: models.StatusActive, JoinDate: time.Now()}, // Valeurs par défaut
 	})
+	if err := session.Save(); err != nil {
+		// Gérer l'erreur de sauvegarde de session si nécessaire
+		// log.Printf("Erreur lors de la sauvegarde de session dans ShowCreateMemberForm: %v", err)
+	}
 }
 
 // CreateMember gère la soumission du formulaire de création de membre.
@@ -123,7 +131,7 @@ func (h *MemberHandlers) ShowEditMemberForm(c *gin.Context) {
 	member, err := h.memberService.GetMemberByID(uint(memberID))
 	if err != nil {
 		c.HTML(http.StatusNotFound, "error.tmpl", gin.H{"error": "Membre non trouvé"})
-		return	
+		return
 	}
 
 	// Vérifier que le membre appartient bien à l'utilisateur connecté
@@ -133,7 +141,7 @@ func (h *MemberHandlers) ShowEditMemberForm(c *gin.Context) {
 	}
 
 	csrfToken := c.MustGet("csrf_token").(string)
-	navbar := components.NavBar(user, csrfToken)
+	navbar := components.NavBar(user, csrfToken, session)
 
 	c.HTML(http.StatusOK, "member_form.tmpl", gin.H{
 		"title":      "Modifier le membre",
@@ -142,6 +150,10 @@ func (h *MemberHandlers) ShowEditMemberForm(c *gin.Context) {
 		"csrf_token": csrfToken,
 		"member":     member,
 	})
+	if err := session.Save(); err != nil {
+		// Gérer l'erreur de sauvegarde de session si nécessaire
+		// log.Printf("Erreur lors de la sauvegarde de session dans ShowEditMemberForm: %v", err)
+	}
 }
 
 // UpdateMember gère la soumission du formulaire de modification de membre.
@@ -159,32 +171,36 @@ func (h *MemberHandlers) UpdateMember(c *gin.Context) {
 		return
 	}
 
-	var updatedMember models.Member
-	if err := c.ShouldBind(&updatedMember); err != nil {
-		c.HTML(http.StatusBadRequest, "error.tmpl", gin.H{"error": "Données de membre invalides: " + err.Error()})
-		return
-	}
-
-	// Récupérer le membre existant pour s'assurer qu'il appartient à l'utilisateur
+	// 1. Récupérer le membre existant de la base de données
 	existingMember, err := h.memberService.GetMemberByID(uint(memberID))
 	if err != nil {
 		c.HTML(http.StatusNotFound, "error.tmpl", gin.H{"error": "Membre non trouvé"})
 		return
 	}
 
+	// 2. Vérifier que le membre appartient bien à l'utilisateur connecté
 	if existingMember.UserID != user.ID {
 		c.HTML(http.StatusForbidden, "error.tmpl", gin.H{"error": "Accès non autorisé"})
 		return
 	}
 
-	// Mettre à jour les champs du membre existant avec les données du formulaire
-	existingMember.FirstName = updatedMember.FirstName
-	existingMember.LastName = updatedMember.LastName
-	existingMember.Email = updatedMember.Email
-	existingMember.MembershipStatus = updatedMember.MembershipStatus
-	existingMember.JoinDate = updatedMember.JoinDate
-	existingMember.EndDate = updatedMember.EndDate
+	// 3. Binder les données du formulaire à une nouvelle structure pour la validation
+	var formMember models.Member
+	if err := c.ShouldBind(&formMember); err != nil {
+		c.HTML(http.StatusBadRequest, "error.tmpl", gin.H{"error": "Données de membre invalides: " + err.Error()})
+		return
+	}
 
+	// 4. Mettre à jour les champs du membre existant avec les données du formulaire
+	existingMember.FirstName = formMember.FirstName
+	existingMember.LastName = formMember.LastName
+	existingMember.Email = formMember.Email
+	existingMember.MembershipStatus = formMember.MembershipStatus
+	existingMember.JoinDate = formMember.JoinDate
+	existingMember.EndDate = formMember.EndDate
+	existingMember.LastPaymentDate = formMember.LastPaymentDate
+
+	// 5. Appeler le service pour sauvegarder le membre mis à jour
 	if err := h.memberService.UpdateMember(existingMember); err != nil {
 		c.HTML(http.StatusInternalServerError, "error.tmpl", gin.H{"error": "Erreur lors de la mise à jour du membre: " + err.Error()})
 		return

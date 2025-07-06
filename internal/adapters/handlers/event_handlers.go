@@ -42,14 +42,19 @@ func (h *EventHandlers) ListEvents(c *gin.Context) {
 
 	// Récupérer le jeton CSRF pour la navbar
 	csrfToken := c.MustGet("csrf_token").(string)
-	navbar := components.NavBar(user, csrfToken)
+	navbar := components.NavBar(user, csrfToken, session)
 
 	c.HTML(http.StatusOK, "events.tmpl", gin.H{
-		"title":  "Mes Événements",
-		"navbar": navbar,
-		"user":   user,
-		"events": events,
+		"title":      "Mes Événements",
+		"navbar":     navbar,
+		"user":       user,
+		"events":     events,
+		"csrf_token": csrfToken, // Ajout du jeton CSRF au contexte du template
 	})
+	if err := session.Save(); err != nil {
+		// Gérer l'erreur de sauvegarde de session si nécessaire
+		// log.Printf("Erreur lors de la sauvegarde de session dans ListEvents: %v", err)
+	}
 }
 
 // ShowCreateEventForm affiche le formulaire de création d'un nouvel événement.
@@ -62,7 +67,7 @@ func (h *EventHandlers) ShowCreateEventForm(c *gin.Context) {
 	}
 
 	csrfToken := c.MustGet("csrf_token").(string)
-	navbar := components.NavBar(user, csrfToken)
+	navbar := components.NavBar(user, csrfToken, session)
 
 	c.HTML(http.StatusOK, "event_form.tmpl", gin.H{
 		"title":      "Créer un nouvel événement",
@@ -71,6 +76,10 @@ func (h *EventHandlers) ShowCreateEventForm(c *gin.Context) {
 		"csrf_token": csrfToken,
 		"event":      models.Event{StartDate: time.Now(), EndDate: time.Now().Add(time.Hour)}, // Valeurs par défaut
 	})
+	if err := session.Save(); err != nil {
+		// Gérer l'erreur de sauvegarde de session si nécessaire
+		// log.Printf("Erreur lors de la sauvegarde de session dans ShowCreateEventForm: %v", err)
+	}
 }
 
 // CreateEvent gère la soumission du formulaire de création d'événement.
@@ -126,7 +135,7 @@ func (h *EventHandlers) ShowEditEventForm(c *gin.Context) {
 	}
 
 	csrfToken := c.MustGet("csrf_token").(string)
-	navbar := components.NavBar(user, csrfToken)
+	navbar := components.NavBar(user, csrfToken, session)
 
 	c.HTML(http.StatusOK, "event_form.tmpl", gin.H{
 		"title":      "Modifier l'événement",
@@ -135,6 +144,10 @@ func (h *EventHandlers) ShowEditEventForm(c *gin.Context) {
 		"csrf_token": csrfToken,
 		"event":      event,
 	})
+	if err := session.Save(); err != nil {
+		// Gérer l'erreur de sauvegarde de session si nécessaire
+		// log.Printf("Erreur lors de la sauvegarde de session dans ShowEditEventForm: %v", err)
+	}
 }
 
 // UpdateEvent gère la soumission du formulaire de modification d'événement.
