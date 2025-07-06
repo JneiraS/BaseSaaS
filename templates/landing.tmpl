@@ -3,54 +3,114 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gérez Votre Association Facilement</title>
+    <title>{{.title}}</title>
     <link rel="stylesheet" href="/static/css/landing.css">
     <link rel="stylesheet" href="/static/css/main.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <!-- Font Awesome pour les icônes -->
+    <link rel="stylesheet" href="/static/css/fontawesome/fontawesome-free-6.5.1-web/css/all.min.css">
 </head>
 <body>
 
     {{.navbar|safe}}
 
     <main>
-        <section class="hero">
+        <section class="hero-section scroll-animate">
             <div class="container">
-                <h1>Gérez Votre Association Facilement et Efficacement</h1>
-                <p>Simplifiez la gestion de vos membres, événements et communications avec notre plateforme intuitive.</p>
-                <a href="/login" class="cta-button">Commencez Gratuitement</a>
+                <div class="hero-content">
+                    <h1>Libérez le Potentiel de Votre Association.</h1>
+                    <p class="subtitle">Une plateforme tout-en-un pour simplifier la gestion, les membres et les événements de votre association.</p>
+                    <a href="/login" class="btn btn-primary hero-cta">Démarrez Gratuitement</a>
+                </div>
             </div>
         </section>
 
-        <section class="features">
+        <section class="features-section scroll-animate">
             <div class="container">
+                <h2 class="section-title">Optimisez Chaque Facette de Votre Association.</h2>
                 <div class="features-grid">
                     <div class="feature-card">
-                        <div class="icon">👥</div>
+                        <div class="icon-wrapper"><i class="fas fa-users"></i></div>
                         <h3>Gestion des Membres</h3>
-                        <p>Suivez les adhésions, les cotisations et les informations de contact de tous vos membres.</p>
+                        <p>Gérez facilement adhésions, cotisations et contacts. Gardez vos membres engagés.</p>
                     </div>
                     <div class="feature-card">
-                        <div class="icon">📅</div>
+                        <div class="icon-wrapper"><i class="fas fa-calendar-alt"></i></div>
                         <h3>Planification d'Événements</h3>
-                        <p>Créez, organisez et gérez les inscriptions à tous vos événements associatifs.</p>
+                        <p>Créez, organisez et gérez les inscriptions. Des événements réussis, sans stress.</p>
                     </div>
                     <div class="feature-card">
-                        <div class="icon">📣</div>
+                        <div class="icon-wrapper"><i class="fas fa-bullhorn"></i></div>
                         <h3>Communication Simplifiée</h3>
-                        <p>Envoyez des newsletters, des annonces et communiquez facilement avec vos membres.</p>
+                        <p>Communiquez sans effort avec vos membres. Newsletters, annonces, tout est centralisé.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="icon-wrapper"><i class="fas fa-chart-line"></i></div>
+                        <h3>Suivi des Statistiques</h3>
+                        <p>Visualisez l'activité de votre association. Prenez des décisions éclairées, basées sur des données.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="icon-wrapper"><i class="fas fa-file-invoice-dollar"></i></div>
+                        <h3>Gestion Financière</h3>
+                        <p>Maîtrisez les finances de votre association. Suivez dépenses et revenus en toute clarté.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="icon-wrapper"><i class="fas fa-cloud"></i></div>
+                        <h3>Accès Cloud Sécurisé</h3>
+                        <p>Accédez à vos données en toute sécurité, partout. La liberté du cloud, la tranquillité d'esprit.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="icon-wrapper"><i class="fas fa-folder-open"></i></div>
+                        <h3>Gestion des Documents</h3>
+                        <p>Centralisez et partagez vos documents clés. Une organisation sans faille, des informations toujours à jour.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="icon-wrapper"><i class="fas fa-poll"></i></div>
+                        <h3>Système de Vote & Sondage</h3>
+                        <p>Impliquez vos membres dans les décisions. Des votes et sondages simples, des résultats clairs.</p>
                     </div>
                 </div>
+            </div>
+        </section>
+
+        <section class="testimonials-section scroll-animate">
+            <div class="container">
+                <h2 class="section-title">Ce que disent nos utilisateurs</h2>
+                <div class="testimonials-grid">
+                    <div class="testimonial-card">
+                        <p>"Grâce à cette plateforme, la gestion de notre association est devenue un jeu d'enfant. Un gain de temps incroyable !"</p>
+                        <p class="testimonial-author">- Marie Dubois, Présidente de "Les Amis du Quartier"</p>
+                    </div>
+                    <div class="testimonial-card">
+                        <p>"Simple, efficace et complet. Tous nos membres sont ravis de la facilité avec laquelle ils peuvent suivre les événements."</p>
+                        <p class="testimonial-author">- Jean Dupont, Secrétaire de "Club Sportif Local"</p>
+                    </div>
+                    <div class="testimonial-card">
+                        <p>"Un outil indispensable pour toute association moderne. Le support est également très réactif."</p>
+                        <p class="testimonial-author">- Sophie Martin, Trésorière de "Association Culturelle"</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="cta-section scroll-animate">
+            <div class="container">
+                <h2>Passez à la Vitesse Supérieure.</h2>
+                <p>Des centaines d'associations optimisent déjà leur quotidien avec nous. Pourquoi pas la vôtre ?</p>
+                <a href="/login" class="btn btn-secondary cta-button">Démarrez Votre Essai Gratuit</a>
             </div>
         </section>
     </main>
 
     <footer class="footer">
         <div class="container">
-            <p>&copy; 2025 Gestion Associations. Tous droits réservés.</p>
+            <p>&copy; 2025 BaseSasS. Tous droits réservés.</p>
         </div>
     </footer>
+    <script src="/static/js/theme.js"></script>
+    <script src="/static/js/scroll-animations.js"></script>
 
 </body>
 </html>

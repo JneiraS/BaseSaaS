@@ -37,7 +37,7 @@ func LoadConfig() (*Config, error) {
 		AppURL:                getEnv("APP_URL", "http://localhost:3000"),
 		CookieName:            getEnv("COOKIE_NAME", "mysession"),
 		CSRFSecret:            os.Getenv("CSRF_SECRET"),
-		ContentSecurityPolicy: getEnv("CONTENT_SECURITY_POLICY", "default-src 'self'; script-src 'self' 'sha256-nhU1dNZtRMH0wGMdWus+C2+OLS90BrB/ybY9vr8XxvA='; style-src 'self'; object-src 'none';"),
+		ContentSecurityPolicy: getEnv("CONTENT_SECURITY_POLICY", "default-src 'self'; script-src 'self' 'sha256-nhU1dNZtRMH0wGMdWus+C2+OLS90BrB/ybY9vr8XxvA='; style-src 'self' https://fonts.googleapis.com https://fonts.gstatic.com; font-src 'self' https://fonts.gstatic.com; object-src 'none';"),
 	}
 
 	if cfg.ClientID == "" || cfg.ClientSecret == "" {
