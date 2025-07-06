@@ -3,6 +3,7 @@ package services
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/JneiraS/BaseSasS/internal/domain/models"
 	"github.com/JneiraS/BaseSasS/internal/domain/repositories"
@@ -47,6 +48,11 @@ func (s *MemberService) UpdateMember(member *models.Member) error {
 // DeleteMember gère la suppression d'un membre.
 func (s *MemberService) DeleteMember(id uint) error {
 	return s.memberRepo.DeleteMember(id)
+}
+
+// MarkPaymentReceived met à jour la date du dernier paiement pour un membre.
+func (s *MemberService) MarkPaymentReceived(memberID uint, paymentDate time.Time) error {
+	return s.memberRepo.UpdateLastPaymentDate(memberID, paymentDate)
 }
 
 // validateMember valide les données d'un membre.

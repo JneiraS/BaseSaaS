@@ -226,3 +226,40 @@ func (h *MemberHandlers) DeleteMember(c *gin.Context) {
 
 	c.Redirect(http.StatusFound, "/members")
 }
+
+// MarkPayment gère le marquage d'un paiement pour un membre.
+func (h *MemberHandlers) MarkPayment(c *gin.Context) {
+	session := c.MustGet("session").(sessions.Session)
+	user, ok := session.Get("user").(models.User)
+	if !ok {
+		c.Redirect(http.StatusFound, "/login")
+		return
+	}
+
+	memberID, err := strconv.ParseUint(c.Param("id"), 10, 64)
+	if err != nil {
+		c.HTML(http.StatusBadRequest, "error.tmpl", gin.H{"error": "ID de membre invalide"})
+		return
+	}
+
+	// Vérifier que le membre appartient bien à l'utilisateur connecté avant de marquer le paiement
+	existingMember, err := h.memberService.GetMemberByID(uint(memberID))
+	if err != nil {
+		c.HTML(http.StatusNotFound, "error.tmpl", gin.H{"error": "Membre non trouvé"})
+		return
+	}
+
+	if existingMember.UserID != user.ID {
+		c.HTML(http.StatusForbidden, "error.tmpl", gin.H{"error": "Accès non autorisé"})
+		return
+	}
+
+	// Marquer le paiement avec la date actuelle
+	if err := h.memberService.MarkPaymentReceived(uint(memberID), time.Now()); err != nil {
+		c.HTML(http.StatusInternalServerError, "error.tmpl", gin.H{"error": "Erreur lors du marquage du paiement: " + err.Error()})
+		return
+	}
+
+	// Rediriger vers la liste des membres après succès
+	c.Redirect(http.StatusFound, "/members")
+}

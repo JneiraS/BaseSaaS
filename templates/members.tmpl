@@ -53,6 +53,12 @@
             border: none;
             cursor: pointer;
         }
+        .members-table .actions button.mark-payment-btn {
+            background-color: #28a745;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
@@ -73,6 +79,7 @@
                     <th>Email</th>
                     <th>Statut</th>
                     <th>Date d'adhésion</th>
+                    <th>Dernier paiement</th>
                     <th>Actions</th>
                 </tr>
             </thead>
@@ -84,11 +91,22 @@
                     <td>{{.Email}}</td>
                     <td>{{.MembershipStatus}}</td>
                     <td>{{.JoinDate.Format "02/01/2006"}}</td>
+                    <td>
+                        {{if .LastPaymentDate}}
+                            {{.LastPaymentDate.Format "02/01/2006"}}
+                        {{else}}
+                            N/A
+                        {{end}}
+                    </td>
                     <td class="actions">
                         <a href="/members/edit/{{.ID}}" class="edit-btn">Modifier</a>
                         <form action="/members/delete/{{.ID}}" method="POST" style="display:inline;">
                             <input type="hidden" name="_csrf" value="{{$.csrf_token}}">
                             <button type="submit" class="delete-btn" onclick="return confirm('Êtes-vous sûr de vouloir supprimer ce membre ?');">Supprimer</button>
+                        </form>
+                        <form action="/members/mark-payment/{{.ID}}" method="POST" style="display:inline;">
+                            <input type="hidden" name="_csrf" value="{{$.csrf_token}}">
+                            <button type="submit" class="mark-payment-btn" onclick="return confirm('Marquer le paiement pour ce membre ?');">Marquer paiement</button>
                         </form>
                     </td>
                 </tr>

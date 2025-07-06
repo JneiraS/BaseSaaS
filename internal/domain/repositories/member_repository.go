@@ -17,6 +17,7 @@ type MemberDB struct {
 	MembershipStatus models.MembershipStatus
 	JoinDate         time.Time
 	EndDate          *time.Time
+	LastPaymentDate  *time.Time
 }
 
 // TableName spécifie le nom de la table pour le modèle MemberDB.
@@ -31,6 +32,7 @@ type MemberRepository interface {
 	FindMembersByUserID(userID uint) ([]models.Member, error)
 	UpdateMember(member *models.Member) error
 	DeleteMember(id uint) error
+	UpdateLastPaymentDate(memberID uint, date time.Time) error
 }
 
 // GormMemberRepository est une implémentation de MemberRepository utilisant GORM.
@@ -87,6 +89,11 @@ func (r *GormMemberRepository) DeleteMember(id uint) error {
 	return r.db.Delete(&MemberDB{}, id).Error
 }
 
+// UpdateLastPaymentDate met à jour la date du dernier paiement pour un membre.
+func (r *GormMemberRepository) UpdateLastPaymentDate(memberID uint, date time.Time) error {
+	return r.db.Model(&MemberDB{}).Where("id = ?", memberID).Update("last_payment_date", date).Error
+}
+
 // toMemberDB convertit un modèle de domaine Member en un modèle de base de données MemberDB.
 func toMemberDB(m *models.Member) *MemberDB {
 	return &MemberDB{
@@ -98,6 +105,7 @@ func toMemberDB(m *models.Member) *MemberDB {
 		MembershipStatus: m.MembershipStatus,
 		JoinDate:         m.JoinDate,
 		EndDate:          m.EndDate,
+		LastPaymentDate:  m.LastPaymentDate,
 	}
 }
 
@@ -112,5 +120,6 @@ func toMember(mdb *MemberDB) *models.Member {
 		MembershipStatus: mdb.MembershipStatus,
 		JoinDate:         mdb.JoinDate,
 		EndDate:          mdb.EndDate,
+		LastPaymentDate:  mdb.LastPaymentDate,
 	}
 }
