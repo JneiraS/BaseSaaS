@@ -27,6 +27,8 @@ type App struct {
 	authService    *services.AuthService
 	authHandlers   *AuthHandlers
 	profileService *services.ProfileService
+	memberService  *services.MemberService
+	memberHandlers *MemberHandlers // Ajout des handlers de membres
 	db             *gorm.DB
 	router         *gin.Engine
 	cfg            *config.Config
@@ -51,20 +53,23 @@ func NewApp() (*App, error) {
 	log.Println("Database connection established.")
 
 	app.userRepo = repositories.NewGormUserRepository(app.db)
+	memberRepo := repositories.NewGormMemberRepository(app.db) // Créez le repo de membres
 
 	app.profileService = services.NewProfileService(app.userRepo)
+	app.memberService = services.NewMemberService(memberRepo) // Initialisez le service de membres
 
 	// L'authentification est optionnelle, le serveur peut démarrer sans.
 	if err := app.initOIDCProvider(); err != nil {
 		log.Printf("AVERTISSEMENT: Authentification indisponible: %v", err)
 	}
 
-	if err := app.db.AutoMigrate(&repositories.UserDB{}); err != nil {
+	if err := app.db.AutoMigrate(&repositories.UserDB{}, &repositories.MemberDB{}); err != nil {
 		return nil, fmt.Errorf("failed to migrate database: %w", err)
 	}
 	log.Println("Database migration completed.")
 
 	app.authHandlers = NewAuthHandlers(app.authService, app.cfg)
+	app.memberHandlers = NewMemberHandlers(app.memberService) // Initialisez les handlers de membres
 
 	router := app.setupServer()
 	app.setupRoutes(router)
@@ -149,6 +154,14 @@ func (app *App) setupRoutes(r *gin.Engine) {
 	r.GET("/home", HomeHandler)
 	r.GET("/profile", app.authRequired(), app.ProfileHandler)
 	r.POST("/profile/update", app.authRequired(), app.UpdateProfileHandler)
+
+	// Routes pour la gestion des membres
+	r.GET("/members", app.authRequired(), app.memberHandlers.ListMembers)
+	r.GET("/members/new", app.authRequired(), app.memberHandlers.ShowCreateMemberForm)
+	r.POST("/members/new", app.authRequired(), app.memberHandlers.CreateMember)
+	r.GET("/members/edit/:id", app.authRequired(), app.memberHandlers.ShowEditMemberForm)
+	r.POST("/members/edit/:id", app.authRequired(), app.memberHandlers.UpdateMember)
+	r.POST("/members/delete/:id", app.authRequired(), app.memberHandlers.DeleteMember)
 
 	// Les routes d'authentification ne sont actives que si le service OIDC est configuré.
 	if app.authService != nil {

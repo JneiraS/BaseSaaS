@@ -52,6 +52,7 @@ func containerButton() gom.Node {
 		gomh.Class("dropdown"),
 		gomh.Ul(
 			gomh.A(gom.Text("Mon profil"), gom.Attr("href", "/profile")),
+			gomh.A(gom.Text("Mes membres"), gom.Attr("href", "/members")),
 			gomh.A(gom.Text("Mes favoris"), gom.Attr("href", "/favoris")),
 			gomh.A(gom.Text("Mes commandes"), gom.Attr("href", "/commandes")),
 		),
