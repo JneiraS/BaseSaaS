@@ -33,6 +33,8 @@ type MemberRepository interface {
 	UpdateMember(member *models.Member) error
 	DeleteMember(id uint) error
 	UpdateLastPaymentDate(memberID uint, date time.Time) error
+	GetTotalMembersCount(userID uint) (int64, error)
+	GetMembersCountByStatus(userID uint) (map[models.MembershipStatus]int64, error)
 }
 
 // GormMemberRepository est une implémentation de MemberRepository utilisant GORM.
@@ -92,6 +94,41 @@ func (r *GormMemberRepository) DeleteMember(id uint) error {
 // UpdateLastPaymentDate met à jour la date du dernier paiement pour un membre.
 func (r *GormMemberRepository) UpdateLastPaymentDate(memberID uint, date time.Time) error {
 	return r.db.Model(&MemberDB{}).Where("id = ?", memberID).Update("last_payment_date", date).Error
+}
+
+// GetTotalMembersCount retourne le nombre total de membres pour un utilisateur donné.
+func (r *GormMemberRepository) GetTotalMembersCount(userID uint) (int64, error) {
+	var count int64
+	if err := r.db.Model(&MemberDB{}).Where("user_id = ?", userID).Count(&count).Error; err != nil {
+		return 0, err
+	}
+	return count, nil
+}
+
+// GetMembersCountByStatus retourne le nombre de membres par statut pour un utilisateur donné.
+func (r *GormMemberRepository) GetMembersCountByStatus(userID uint) (map[models.MembershipStatus]int64, error) {
+	counts := make(map[models.MembershipStatus]int64)
+	var results []struct {
+		MembershipStatus models.MembershipStatus
+		Count            int64
+	}
+
+	if err := r.db.Model(&MemberDB{}).Where("user_id = ?", userID).Group("membership_status").Select("membership_status, count(*) as count").Scan(&results).Error; err != nil {
+		return nil, err
+	}
+
+	for _, res := range results {
+		counts[res.MembershipStatus] = res.Count
+	}
+
+	// Assurez-vous que tous les statuts possibles sont présents, même avec un count de 0
+	for _, status := range []models.MembershipStatus{models.StatusActive, models.StatusInactive, models.StatusPending, models.StatusExpired} {
+		if _, ok := counts[status]; !ok {
+			counts[status] = 0
+		}
+	}
+
+	return counts, nil
 }
 
 // toMemberDB convertit un modèle de domaine Member en un modèle de base de données MemberDB.

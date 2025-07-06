@@ -29,6 +29,7 @@ type EventRepository interface {
 	FindEventsByUserID(userID uint) ([]models.Event, error)
 	UpdateEvent(event *models.Event) error
 	DeleteEvent(id uint) error
+	GetTotalEventsCount(userID uint) (int64, error)
 }
 
 // GormEventRepository est une implémentation de EventRepository utilisant GORM.
@@ -83,6 +84,15 @@ func (r *GormEventRepository) UpdateEvent(event *models.Event) error {
 // DeleteEvent supprime un événement par son ID.
 func (r *GormEventRepository) DeleteEvent(id uint) error {
 	return r.db.Delete(&EventDB{}, id).Error
+}
+
+// GetTotalEventsCount retourne le nombre total d'événements pour un utilisateur donné.
+func (r *GormEventRepository) GetTotalEventsCount(userID uint) (int64, error) {
+	var count int64
+	if err := r.db.Model(&EventDB{}).Where("user_id = ?", userID).Count(&count).Error; err != nil {
+		return 0, err
+	}
+	return count, nil
 }
 
 // toEventDB convertit un modèle de domaine Event en un modèle de base de données EventDB.

@@ -55,6 +55,16 @@ func (s *MemberService) MarkPaymentReceived(memberID uint, paymentDate time.Time
 	return s.memberRepo.UpdateLastPaymentDate(memberID, paymentDate)
 }
 
+// GetTotalMembersCount retourne le nombre total de membres pour un utilisateur donné.
+func (s *MemberService) GetTotalMembersCount(userID uint) (int64, error) {
+	return s.memberRepo.GetTotalMembersCount(userID)
+}
+
+// GetMembersCountByStatus retourne le nombre de membres par statut pour un utilisateur donné.
+func (s *MemberService) GetMembersCountByStatus(userID uint) (map[models.MembershipStatus]int64, error) {
+	return s.memberRepo.GetMembersCountByStatus(userID)
+}
+
 // validateMember valide les données d'un membre.
 func (s *MemberService) validateMember(member *models.Member) error {
 	member.FirstName = strings.TrimSpace(member.FirstName)

@@ -85,21 +85,11 @@ func (s *DocumentService) GetDocumentsByUserID(userID uint) ([]models.Document, 
 
 // DeleteDocument supprime un document de la base de données et du système de fichiers.
 func (s *DocumentService) DeleteDocument(documentID uint) error {
-	document, err := s.documentRepo.FindDocumentByID(documentID)
-	if err != nil {
-		return fmt.Errorf("document non trouvé: %w", err)
-	}
-
-	// Supprimer le fichier physique
-	if err := os.Remove(document.FilePath); err != nil {
-		// Loguer l'erreur mais ne pas empêcher la suppression de l'entrée DB si le fichier est déjà parti
-		fmt.Printf("AVERTISSEMENT: Impossible de supprimer le fichier physique %s: %v\n", document.FilePath, err)
-	}
-
-	// Supprimer l'entrée de la base de données
-	if err := s.documentRepo.DeleteDocument(documentID); err != nil {
-		return fmt.Errorf("impossible de supprimer le document de la base de données: %w", err)
-	}
-
-	return nil
+	return s.documentRepo.DeleteDocument(documentID)
 }
+
+// GetTotalDocumentsCount retourne le nombre total de documents pour un utilisateur donné.
+func (s *DocumentService) GetTotalDocumentsCount(userID uint) (int64, error) {
+	return s.documentRepo.GetTotalDocumentsCount(userID)
+}
+

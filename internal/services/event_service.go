@@ -49,6 +49,11 @@ func (s *EventService) DeleteEvent(id uint) error {
 	return s.eventRepo.DeleteEvent(id)
 }
 
+// GetTotalEventsCount retourne le nombre total d'événements pour un utilisateur donné.
+func (s *EventService) GetTotalEventsCount(userID uint) (int64, error) {
+	return s.eventRepo.GetTotalEventsCount(userID)
+}
+
 // validateEvent valide les données d'un événement.
 func (s *EventService) validateEvent(event *models.Event) error {
 	event.Title = strings.TrimSpace(event.Title)

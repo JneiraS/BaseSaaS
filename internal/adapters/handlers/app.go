@@ -32,11 +32,14 @@ type App struct {
 	emailService   *services.EmailService
 	financeService *services.FinanceService
 	documentService *services.DocumentService
+	pollService    *services.PollService
 	memberHandlers *MemberHandlers
 	eventHandlers  *EventHandlers
 	communicationHandlers *CommunicationHandlers
 	financeHandlers *FinanceHandlers
-	documentHandlers *DocumentHandlers // Ajout des handlers de documents
+	documentHandlers *DocumentHandlers
+	statisticsHandlers *StatisticsHandlers
+	pollHandlers   *PollHandlers // Ajout des handlers de sondages
 	db             *gorm.DB
 	router         *gin.Engine
 	cfg            *config.Config
@@ -72,6 +75,9 @@ func NewApp() (*App, error) {
 	app.financeService = services.NewFinanceService(transactionRepo) // Initialisez le service financier
 	documentRepo := repositories.NewGormDocumentRepository(app.db) // Créez le repo de documents
 	app.documentService = services.NewDocumentService(documentRepo, app.cfg) // Initialisez le service de documents
+	pollRepo := repositories.NewGormPollRepository(app.db) // Créez le repo de sondages
+	voteRepo := repositories.NewGormVoteRepository(app.db) // Créez le repo de votes
+	app.pollService = services.NewPollService(pollRepo, voteRepo) // Initialisez le service de sondages
 
 	// L'authentification est optionnelle, le serveur peut démarrer sans.
 	if err := app.initOIDCProvider(); err != nil {
@@ -89,6 +95,8 @@ func NewApp() (*App, error) {
 	app.communicationHandlers = NewCommunicationHandlers(app.emailService, app.memberService) // Initialisez les handlers de communication
 	app.financeHandlers = NewFinanceHandlers(app.financeService) // Initialisez les handlers financiers
 	app.documentHandlers = NewDocumentHandlers(app.documentService) // Initialisez les handlers de documents
+	app.statisticsHandlers = NewStatisticsHandlers(app.memberService, app.financeService, app.eventService, app.documentService) // Initialisez les handlers de statistiques
+	app.pollHandlers = NewPollHandlers(app.pollService) // Initialisez les handlers de sondages
 
 	router := app.setupServer()
 	app.setupRoutes(router)
@@ -160,6 +168,21 @@ func (app *App) setupServer() *gin.Engine {
 				return template.HTML(fmt.Sprint(v))
 			}
 		},
+		"add": func(a, b int64) int64 { return a + b },
+		"mul": func(a, b float64) float64 { return a * b },
+		"div": func(a, b float64) float64 { return a / b },
+		"float": func(a interface{}) float64 {
+			switch v := a.(type) {
+			case int:
+				return float64(v)
+			case int64:
+				return float64(v)
+			case float64:
+				return v
+			default:
+				return 0.0
+			}
+		},
 	})
 
 	r.LoadHTMLGlob("templates/*")
@@ -209,6 +232,23 @@ func (app *App) setupRoutes(r *gin.Engine) {
 	r.POST("/documents/upload", app.authRequired(), app.documentHandlers.UploadDocument)
 	r.GET("/documents/download/:id", app.authRequired(), app.documentHandlers.DownloadDocument)
 	r.POST("/documents/delete/:id", app.authRequired(), app.documentHandlers.DeleteDocument)
+
+	// Routes pour les sondages
+	r.GET("/polls", app.authRequired(), app.pollHandlers.ListPolls)
+	r.GET("/polls/new", app.authRequired(), app.pollHandlers.ShowCreatePollForm)
+	r.POST("/polls/new", app.authRequired(), app.pollHandlers.CreatePoll)
+	r.GET("/polls/:id", app.authRequired(), app.pollHandlers.ShowPollDetails)
+	r.POST("/polls/:id/vote", app.authRequired(), app.pollHandlers.VoteOnPoll)
+	r.POST("/polls/delete/:id", app.authRequired(), app.pollHandlers.DeletePoll)
+
+	// Routes pour les statistiques (API)
+	r.GET("/api/stats/members", app.authRequired(), app.statisticsHandlers.GetMemberStats)
+	r.GET("/api/stats/finance", app.authRequired(), app.statisticsHandlers.GetFinanceStats)
+	r.GET("/api/stats/events", app.authRequired(), app.statisticsHandlers.GetEventStats)
+	r.GET("/api/stats/documents", app.authRequired(), app.statisticsHandlers.GetDocumentStats)
+
+	// Route pour le tableau de bord
+	r.GET("/dashboard", app.authRequired(), app.statisticsHandlers.ShowDashboard)
 
 	// Les routes d'authentification ne sont actives que si le service OIDC est configuré.
 	if app.authService != nil {

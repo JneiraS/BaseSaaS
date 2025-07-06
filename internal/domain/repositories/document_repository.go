@@ -29,6 +29,7 @@ type DocumentRepository interface {
 	FindDocumentByID(id uint) (*models.Document, error)
 	FindDocumentsByUserID(userID uint) ([]models.Document, error)
 	DeleteDocument(id uint) error
+	GetTotalDocumentsCount(userID uint) (int64, error)
 }
 
 // GormDocumentRepository est une implémentation de DocumentRepository utilisant GORM.
@@ -77,6 +78,15 @@ func (r *GormDocumentRepository) FindDocumentsByUserID(userID uint) ([]models.Do
 // DeleteDocument supprime un document par son ID.
 func (r *GormDocumentRepository) DeleteDocument(id uint) error {
 	return r.db.Delete(&DocumentDB{}, id).Error
+}
+
+// GetTotalDocumentsCount retourne le nombre total de documents pour un utilisateur donné.
+func (r *GormDocumentRepository) GetTotalDocumentsCount(userID uint) (int64, error) {
+	var count int64
+	if err := r.db.Model(&DocumentDB{}).Where("user_id = ?", userID).Count(&count).Error; err != nil {
+		return 0, err
+	}
+	return count, nil
 }
 
 // toDocumentDB convertit un modèle de domaine Document en un modèle de base de données DocumentDB.

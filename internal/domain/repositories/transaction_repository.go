@@ -29,6 +29,8 @@ type TransactionRepository interface {
 	FindTransactionsByUserID(userID uint) ([]models.Transaction, error)
 	UpdateTransaction(transaction *models.Transaction) error
 	DeleteTransaction(id uint) error
+	GetTotalIncome(userID uint) (float64, error)
+	GetTotalExpenses(userID uint) (float64, error)
 }
 
 // GormTransactionRepository est une implémentation de TransactionRepository utilisant GORM.
@@ -83,6 +85,24 @@ func (r *GormTransactionRepository) UpdateTransaction(transaction *models.Transa
 // DeleteTransaction supprime une transaction par son ID.
 func (r *GormTransactionRepository) DeleteTransaction(id uint) error {
 	return r.db.Delete(&TransactionDB{}, id).Error
+}
+
+// GetTotalIncome retourne le total des revenus pour un utilisateur donné.
+func (r *GormTransactionRepository) GetTotalIncome(userID uint) (float64, error) {
+	var total float64
+	if err := r.db.Model(&TransactionDB{}).Where("user_id = ? AND type = ?", userID, models.TypeIncome).Select("sum(amount)").Row().Scan(&total); err != nil {
+		return 0, err
+	}
+	return total, nil
+}
+
+// GetTotalExpenses retourne le total des dépenses pour un utilisateur donné.
+func (r *GormTransactionRepository) GetTotalExpenses(userID uint) (float64, error) {
+	var total float64
+	if err := r.db.Model(&TransactionDB{}).Where("user_id = ? AND type = ?", userID, models.TypeExpense).Select("sum(amount)").Row().Scan(&total); err != nil {
+		return 0, err
+	}
+	return total, nil
 }
 
 // toTransactionDB convertit un modèle de domaine Transaction en un modèle de base de données TransactionDB.

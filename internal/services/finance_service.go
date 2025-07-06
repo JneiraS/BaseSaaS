@@ -49,6 +49,16 @@ func (s *FinanceService) DeleteTransaction(id uint) error {
 	return s.transactionRepo.DeleteTransaction(id)
 }
 
+// GetTotalIncome retourne le total des revenus pour un utilisateur donné.
+func (s *FinanceService) GetTotalIncome(userID uint) (float64, error) {
+	return s.transactionRepo.GetTotalIncome(userID)
+}
+
+// GetTotalExpenses retourne le total des dépenses pour un utilisateur donné.
+func (s *FinanceService) GetTotalExpenses(userID uint) (float64, error) {
+	return s.transactionRepo.GetTotalExpenses(userID)
+}
+
 // validateTransaction valide les données d'une transaction.
 func (s *FinanceService) validateTransaction(transaction *models.Transaction) error {
 	transaction.Description = strings.TrimSpace(transaction.Description)
