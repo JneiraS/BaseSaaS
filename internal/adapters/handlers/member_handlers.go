@@ -12,19 +12,22 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// MemberHandlers encapsule les dépendances pour les handlers des membres.
+// MemberHandlers encapsulates the dependencies for member-related HTTP handlers.
+// It holds a reference to the MemberService, which contains the business logic for members.
 type MemberHandlers struct {
 	memberService *services.MemberService
 }
 
-// NewMemberHandlers crée une nouvelle instance de MemberHandlers.
+// NewMemberHandlers creates a new instance of MemberHandlers.
+// It takes a MemberService as a dependency, adhering to the dependency inversion principle.
 func NewMemberHandlers(memberService *services.MemberService) *MemberHandlers {
 	return &MemberHandlers{memberService: memberService}
 }
 
-// ListMembers affiche la liste des membres.
+// ListMembers displays a list of members for the authenticated user.
+// It retrieves members from the MemberService and renders them using the "members.tmpl" template.
 func (h *MemberHandlers) ListMembers(c *gin.Context) {
-	// Récupérer l'utilisateur connecté depuis la session
+	// Retrieve the authenticated user from the session.
 	session := c.MustGet("session").(sessions.Session)
 	user, ok := session.Get("user").(models.User)
 	if !ok {
@@ -32,32 +35,35 @@ func (h *MemberHandlers) ListMembers(c *gin.Context) {
 		return
 	}
 
-	// Récupérer les membres associés à cet utilisateur
+	// Retrieve members associated with the current user.
 	members, err := h.memberService.GetMembersByUserID(user.ID)
 	if err != nil {
-		// Gérer l'erreur, par exemple, afficher un message d'erreur
+		// Handle error, e.g., display an error message to the user.
 		c.HTML(http.StatusInternalServerError, "error.tmpl", gin.H{"error": "Erreur lors de la récupération des membres"})
 		return
 	}
 
-	// Récupérer le jeton CSRF pour la navbar
+	// Retrieve CSRF token for the navigation bar.
 	csrfToken := c.MustGet("csrf_token").(string)
 	navbar := components.NavBar(user, csrfToken, session)
 
+	// Render the members list page.
 	c.HTML(http.StatusOK, "members.tmpl", gin.H{
 		"title":      "Mes Membres",
 		"navbar":     navbar,
 		"user":       user,
 		"members":    members,
-		"csrf_token": csrfToken, // Ajout du jeton CSRF au contexte du template
+		"csrf_token": csrfToken, // Add CSRF token to the template context
 	})
+	// Save session changes if any (e.g., flash messages).
 	if err := session.Save(); err != nil {
-		// Gérer l'erreur de sauvegarde de session si nécessaire
+		// Handle session save error if necessary
 		// log.Printf("Erreur lors de la sauvegarde de session dans ListMembers: %v", err)
 	}
 }
 
-// ShowCreateMemberForm affiche le formulaire de création d'un nouveau membre.
+// ShowCreateMemberForm displays the form for creating a new member.
+// It provides default values for membership status and join date for convenience.
 func (h *MemberHandlers) ShowCreateMemberForm(c *gin.Context) {
 	session := c.MustGet("session").(sessions.Session)
 	user, ok := session.Get("user").(models.User)
@@ -69,20 +75,22 @@ func (h *MemberHandlers) ShowCreateMemberForm(c *gin.Context) {
 	csrfToken := c.MustGet("csrf_token").(string)
 	navbar := components.NavBar(user, csrfToken, session)
 
+	// Render the member creation form.
 	c.HTML(http.StatusOK, "member_form.tmpl", gin.H{
 		"title":      "Ajouter un nouveau membre",
 		"navbar":     navbar,
 		"user":       user,
 		"csrf_token": csrfToken,
-		"member":     models.Member{MembershipStatus: models.StatusActive, JoinDate: time.Now()}, // Valeurs par défaut
+		"member":     models.Member{MembershipStatus: models.StatusActive, JoinDate: time.Now()}, // Default values
 	})
 	if err := session.Save(); err != nil {
-		// Gérer l'erreur de sauvegarde de session si nécessaire
+		// Handle session save error if necessary
 		// log.Printf("Erreur lors de la sauvegarde de session dans ShowCreateMemberForm: %v", err)
 	}
 }
 
-// CreateMember gère la soumission du formulaire de création de membre.
+// CreateMember handles the submission of the new member creation form.
+// It binds the form data to a Member model, sets the UserID, and calls the service to create the member.
 func (h *MemberHandlers) CreateMember(c *gin.Context) {
 	session := c.MustGet("session").(sessions.Session)
 	user, ok := session.Get("user").(models.User)
@@ -92,28 +100,29 @@ func (h *MemberHandlers) CreateMember(c *gin.Context) {
 	}
 
 	var newMember models.Member
-	// Bind le formulaire à la structure Member
+	// Bind form data to the newMember struct. If binding fails, return a bad request error.
 	if err := c.ShouldBind(&newMember); err != nil {
-		// Gérer l'erreur de binding (ex: données invalides)
+		// Handle binding error (e.g., invalid data)
 		c.HTML(http.StatusBadRequest, "error.tmpl", gin.H{"error": "Données de membre invalides: " + err.Error()})
 		return
 	}
 
-	// Assigner l'ID de l'utilisateur connecté au membre
+	// Assign the current user's ID to the new member.
 	newMember.UserID = user.ID
 
-	// Appeler le service pour créer le membre
+	// Call the service to create the member.
 	if err := h.memberService.CreateMember(&newMember); err != nil {
-		// Gérer l'erreur de création
+		// Handle creation error
 		c.HTML(http.StatusInternalServerError, "error.tmpl", gin.H{"error": "Erreur lors de la création du membre: " + err.Error()})
 		return
 	}
 
-	// Rediriger vers la liste des membres après succès
+	// Redirect to the members list page upon success.
 	c.Redirect(http.StatusFound, "/members")
 }
 
-// ShowEditMemberForm affiche le formulaire de modification d'un membre existant.
+// ShowEditMemberForm displays the form for editing an existing member.
+// It retrieves the member by ID, ensures it belongs to the authenticated user, and populates the form.
 func (h *MemberHandlers) ShowEditMemberForm(c *gin.Context) {
 	session := c.MustGet("session").(sessions.Session)
 	user, ok := session.Get("user").(models.User)
@@ -122,19 +131,21 @@ func (h *MemberHandlers) ShowEditMemberForm(c *gin.Context) {
 		return
 	}
 
+	// Parse the member ID from the URL parameter.
 	memberID, err := strconv.ParseUint(c.Param("id"), 10, 64)
 	if err != nil {
 		c.HTML(http.StatusBadRequest, "error.tmpl", gin.H{"error": "ID de membre invalide"})
 		return
 	}
 
+	// Retrieve the member from the service.
 	member, err := h.memberService.GetMemberByID(uint(memberID))
 	if err != nil {
 		c.HTML(http.StatusNotFound, "error.tmpl", gin.H{"error": "Membre non trouvé"})
 		return
 	}
 
-	// Vérifier que le membre appartient bien à l'utilisateur connecté
+	// Verify that the member belongs to the authenticated user for security.
 	if member.UserID != user.ID {
 		c.HTML(http.StatusForbidden, "error.tmpl", gin.H{"error": "Accès non autorisé"})
 		return
@@ -143,6 +154,7 @@ func (h *MemberHandlers) ShowEditMemberForm(c *gin.Context) {
 	csrfToken := c.MustGet("csrf_token").(string)
 	navbar := components.NavBar(user, csrfToken, session)
 
+	// Render the member edit form.
 	c.HTML(http.StatusOK, "member_form.tmpl", gin.H{
 		"title":      "Modifier le membre",
 		"navbar":     navbar,
@@ -151,12 +163,13 @@ func (h *MemberHandlers) ShowEditMemberForm(c *gin.Context) {
 		"member":     member,
 	})
 	if err := session.Save(); err != nil {
-		// Gérer l'erreur de sauvegarde de session si nécessaire
+		// Handle session save error if necessary
 		// log.Printf("Erreur lors de la sauvegarde de session dans ShowEditMemberForm: %v", err)
 	}
 }
 
-// UpdateMember gère la soumission du formulaire de modification de membre.
+// UpdateMember handles the submission of the member modification form.
+// It retrieves the existing member, binds updated data, ensures ownership, and calls the service to update.
 func (h *MemberHandlers) UpdateMember(c *gin.Context) {
 	session := c.MustGet("session").(sessions.Session)
 	user, ok := session.Get("user").(models.User)
@@ -165,33 +178,34 @@ func (h *MemberHandlers) UpdateMember(c *gin.Context) {
 		return
 	}
 
+	// Parse the member ID from the URL parameter.
 	memberID, err := strconv.ParseUint(c.Param("id"), 10, 64)
 	if err != nil {
 		c.HTML(http.StatusBadRequest, "error.tmpl", gin.H{"error": "ID de membre invalide"})
 		return
 	}
 
-	// 1. Récupérer le membre existant de la base de données
+	// 1. Retrieve the existing member from the database.
 	existingMember, err := h.memberService.GetMemberByID(uint(memberID))
 	if err != nil {
 		c.HTML(http.StatusNotFound, "error.tmpl", gin.H{"error": "Membre non trouvé"})
 		return
 	}
 
-	// 2. Vérifier que le membre appartient bien à l'utilisateur connecté
+	// 2. Verify that the member belongs to the authenticated user.
 	if existingMember.UserID != user.ID {
 		c.HTML(http.StatusForbidden, "error.tmpl", gin.H{"error": "Accès non autorisé"})
 		return
 	}
 
-	// 3. Binder les données du formulaire à une nouvelle structure pour la validation
+	// 3. Bind the form data to a new struct for validation.
 	var formMember models.Member
 	if err := c.ShouldBind(&formMember); err != nil {
 		c.HTML(http.StatusBadRequest, "error.tmpl", gin.H{"error": "Données de membre invalides: " + err.Error()})
 		return
 	}
 
-	// 4. Mettre à jour les champs du membre existant avec les données du formulaire
+	// 4. Update the fields of the existing member with the new data from the form.
 	existingMember.FirstName = formMember.FirstName
 	existingMember.LastName = formMember.LastName
 	existingMember.Email = formMember.Email
@@ -200,16 +214,18 @@ func (h *MemberHandlers) UpdateMember(c *gin.Context) {
 	existingMember.EndDate = formMember.EndDate
 	existingMember.LastPaymentDate = formMember.LastPaymentDate
 
-	// 5. Appeler le service pour sauvegarder le membre mis à jour
+	// 5. Call the service to save the updated member.
 	if err := h.memberService.UpdateMember(existingMember); err != nil {
 		c.HTML(http.StatusInternalServerError, "error.tmpl", gin.H{"error": "Erreur lors de la mise à jour du membre: " + err.Error()})
 		return
 	}
 
+	// Redirect to the members list page upon successful update.
 	c.Redirect(http.StatusFound, "/members")
 }
 
-// DeleteMember gère la suppression d'un membre.
+// DeleteMember handles the deletion of a member.
+// It retrieves the member by ID, ensures it belongs to the authenticated user, and calls the service to delete it.
 func (h *MemberHandlers) DeleteMember(c *gin.Context) {
 	session := c.MustGet("session").(sessions.Session)
 	user, ok := session.Get("user").(models.User)
@@ -218,13 +234,14 @@ func (h *MemberHandlers) DeleteMember(c *gin.Context) {
 		return
 	}
 
+	// Parse the member ID from the URL parameter.
 	memberID, err := strconv.ParseUint(c.Param("id"), 10, 64)
 	if err != nil {
 		c.HTML(http.StatusBadRequest, "error.tmpl", gin.H{"error": "ID de membre invalide"})
 		return
 	}
 
-	// Vérifier que le membre appartient bien à l'utilisateur connecté avant de supprimer
+	// Verify that the member belongs to the authenticated user before deletion.
 	existingMember, err := h.memberService.GetMemberByID(uint(memberID))
 	if err != nil {
 		c.HTML(http.StatusNotFound, "error.tmpl", gin.H{"error": "Membre non trouvé"})
@@ -236,15 +253,18 @@ func (h *MemberHandlers) DeleteMember(c *gin.Context) {
 		return
 	}
 
+	// Call the service to delete the member. Handle any errors during deletion.
 	if err := h.memberService.DeleteMember(uint(memberID)); err != nil {
 		c.HTML(http.StatusInternalServerError, "error.tmpl", gin.H{"error": "Erreur lors de la suppression du membre: " + err.Error()})
 		return
 	}
 
+	// Redirect to the members list page upon successful deletion.
 	c.Redirect(http.StatusFound, "/members")
 }
 
-// MarkPayment gère le marquage d'un paiement pour un membre.
+// MarkPayment handles marking a payment for a member.
+// It retrieves the member by ID, ensures it belongs to the authenticated user, and calls the service to update the payment status.
 func (h *MemberHandlers) MarkPayment(c *gin.Context) {
 	session := c.MustGet("session").(sessions.Session)
 	user, ok := session.Get("user").(models.User)
@@ -253,13 +273,14 @@ func (h *MemberHandlers) MarkPayment(c *gin.Context) {
 		return
 	}
 
+	// Parse the member ID from the URL parameter.
 	memberID, err := strconv.ParseUint(c.Param("id"), 10, 64)
 	if err != nil {
 		c.HTML(http.StatusBadRequest, "error.tmpl", gin.H{"error": "ID de membre invalide"})
 		return
 	}
 
-	// Vérifier que le membre appartient bien à l'utilisateur connecté avant de marquer le paiement
+	// Verify that the member belongs to the authenticated user before marking payment.
 	existingMember, err := h.memberService.GetMemberByID(uint(memberID))
 	if err != nil {
 		c.HTML(http.StatusNotFound, "error.tmpl", gin.H{"error": "Membre non trouvé"})
@@ -271,12 +292,12 @@ func (h *MemberHandlers) MarkPayment(c *gin.Context) {
 		return
 	}
 
-	// Marquer le paiement avec la date actuelle
+	// Mark the payment with the current date.
 	if err := h.memberService.MarkPaymentReceived(uint(memberID), time.Now()); err != nil {
 		c.HTML(http.StatusInternalServerError, "error.tmpl", gin.H{"error": "Erreur lors du marquage du paiement: " + err.Error()})
 		return
 	}
 
-	// Rediriger vers la liste des membres après succès
+	// Redirect to the members list page upon successful payment marking.
 	c.Redirect(http.StatusFound, "/members")
 }

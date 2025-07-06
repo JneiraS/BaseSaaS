@@ -10,12 +10,16 @@ import (
 	"gorm.io/gorm"
 )
 
+// AuthService encapsulates the business logic for authentication.
+// It manages interactions with the OIDC provider and the user repository.
 type AuthService struct {
-	Provider     *oidc.Provider
-	Oauth2Config *oauth2.Config
-	userRepo     repositories.UserRepository
+	Provider     *oidc.Provider         // OIDC provider instance
+	Oauth2Config *oauth2.Config         // OAuth2 configuration for the client
+	userRepo     repositories.UserRepository // User repository for database operations
 }
 
+// NewAuthService creates a new instance of AuthService.
+// It takes an OIDC provider, OAuth2 config, and a UserRepository as dependencies.
 func NewAuthService(provider *oidc.Provider, config *oauth2.Config, userRepo repositories.UserRepository) *AuthService {
 	return &AuthService{
 		Provider:     provider,
@@ -24,21 +28,24 @@ func NewAuthService(provider *oidc.Provider, config *oauth2.Config, userRepo rep
 	}
 }
 
+// IsConfigured checks if the AuthService has been properly configured with an OIDC provider and OAuth2 config.
 func (s *AuthService) IsConfigured() bool {
 	return s.Provider != nil && s.Oauth2Config != nil
 }
 
-// FindOrCreateUserFromClaims recherche un utilisateur par son OIDCID, le crée s'il n'existe pas,
-// ou met à jour ses informations s'il existe.
+// FindOrCreateUserFromClaims searches for a user by their OIDC ID (subject claim).
+// If the user exists, it updates their information (email, name, last connection).
+// If the user does not exist, it creates a new user record in the database.
 func (s *AuthService) FindOrCreateUserFromClaims(claims struct {
 	Email string `json:"email"`
 	Name  string `json:"name"`
 	Sub   string `json:"sub"`
 }) (*models.User, error) {
+	// Attempt to find the user by their OIDC subject ID.
 	user, err := s.userRepo.FindUserByOIDCID(claims.Sub)
 
 	if err == gorm.ErrRecordNotFound {
-		// L'utilisateur n'existe pas, le créer
+		// User does not exist, create a new one.
 		newUser := &models.User{
 			OIDCID:         claims.Sub,
 			Email:          claims.Email,
@@ -50,10 +57,10 @@ func (s *AuthService) FindOrCreateUserFromClaims(claims struct {
 		}
 		return newUser, nil
 	} else if err != nil {
-		// Erreur lors de la recherche
+		// An unexpected error occurred during the search.
 		return nil, err
 	} else {
-		// L'utilisateur existe, mettre à jour ses informations si nécessaire
+		// User exists, update their information if necessary.
 		user.Email = claims.Email
 		user.Name = claims.Name
 		user.LastConnection = time.Now()

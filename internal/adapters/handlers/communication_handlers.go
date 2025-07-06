@@ -12,13 +12,15 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// CommunicationHandlers encapsule les dépendances pour les handlers de communication.
+// CommunicationHandlers encapsulates the dependencies for communication-related HTTP handlers.
+// It holds references to the EmailService for sending emails and MemberService for retrieving member email addresses.
 type CommunicationHandlers struct {
 	emailService  *services.EmailService
-	memberService *services.MemberService // Pour récupérer les adresses e-mail des membres
+	memberService *services.MemberService // To retrieve member email addresses
 }
 
-// NewCommunicationHandlers crée une nouvelle instance de CommunicationHandlers.
+// NewCommunicationHandlers creates a new instance of CommunicationHandlers.
+// It takes EmailService and MemberService as dependencies.
 func NewCommunicationHandlers(emailService *services.EmailService, memberService *services.MemberService) *CommunicationHandlers {
 	return &CommunicationHandlers{
 		emailService:  emailService,
@@ -26,8 +28,10 @@ func NewCommunicationHandlers(emailService *services.EmailService, memberService
 	}
 }
 
-// ShowEmailForm affiche le formulaire d'envoi d'e-mail.
+// ShowEmailForm displays the email sending form.
+// It retrieves the authenticated user from the session and renders the "email_form.tmpl" template.
 func (h *CommunicationHandlers) ShowEmailForm(c *gin.Context) {
+	// Retrieve the authenticated user from the session.
 	session := c.MustGet("session").(sessions.Session)
 	user, ok := session.Get("user").(models.User)
 	if !ok {
@@ -35,9 +39,11 @@ func (h *CommunicationHandlers) ShowEmailForm(c *gin.Context) {
 		return
 	}
 
+	// Retrieve CSRF token for the navigation bar.
 	csrfToken := c.MustGet("csrf_token").(string)
 	navbar := components.NavBar(user, csrfToken, session)
 
+	// Render the email form page.
 	c.HTML(http.StatusOK, "email_form.tmpl", gin.H{
 		"title":      "Envoyer un e-mail aux membres",
 		"navbar":     navbar,
@@ -46,8 +52,11 @@ func (h *CommunicationHandlers) ShowEmailForm(c *gin.Context) {
 	})
 }
 
-// SendEmailToMembers gère l'envoi d'e-mails aux membres.
+// SendEmailToMembers handles the submission of the email sending form.
+// It retrieves the subject and body from the form, fetches all member emails for the authenticated user,
+// and sends the email using the EmailService.
 func (h *CommunicationHandlers) SendEmailToMembers(c *gin.Context) {
+	// Retrieve the authenticated user from the session.
 	session := c.MustGet("session").(sessions.Session)
 	user, ok := session.Get("user").(models.User)
 	if !ok {
@@ -55,10 +64,11 @@ func (h *CommunicationHandlers) SendEmailToMembers(c *gin.Context) {
 		return
 	}
 
+	// Get email subject and body from the form submission.
 	subject := c.PostForm("subject")
 	body := c.PostForm("body")
 
-	// Récupérer tous les membres de l'utilisateur connecté
+	// Retrieve all members for the authenticated user to get their email addresses.
 	members, err := h.memberService.GetMembersByUserID(user.ID)
 	if err != nil {
 		log.Printf("ERREUR: Impossible de récupérer les membres pour l'envoi d'e-mail: %v", err)
@@ -71,6 +81,7 @@ func (h *CommunicationHandlers) SendEmailToMembers(c *gin.Context) {
 		recipientEmails = append(recipientEmails, member.Email)
 	}
 
+	// If no members are found, add a warning flash message and redirect.
 	if len(recipientEmails) == 0 {
 		log.Printf("INFO: Aucun membre trouvé pour l'envoi d'e-mail.")
 		session.AddFlash("Aucun membre trouvé pour envoyer l'e-mail.", "warning")
@@ -81,7 +92,7 @@ func (h *CommunicationHandlers) SendEmailToMembers(c *gin.Context) {
 		return
 	}
 
-	// Envoyer l'e-mail
+	// Send the email using the EmailService.
 	if err := h.emailService.SendEmail(recipientEmails, subject, body); err != nil {
 		log.Printf("ERREUR: Échec de l'envoi de l'e-mail: %v", err)
 		session.AddFlash("Échec de l'envoi de l'e-mail: "+err.Error(), "error")
@@ -92,6 +103,7 @@ func (h *CommunicationHandlers) SendEmailToMembers(c *gin.Context) {
 		return
 	}
 
+	// Add a success flash message and redirect upon successful email sending.
 	log.Printf("INFO: E-mail envoyé avec succès à %d membres.", len(recipientEmails))
 	session.AddFlash(fmt.Sprintf("E-mail envoyé avec succès à %d membres.", len(recipientEmails)), "success")
 	if err := session.Save(); err != nil {

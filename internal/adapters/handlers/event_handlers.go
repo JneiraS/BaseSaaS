@@ -12,19 +12,22 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// EventHandlers encapsule les dépendances pour les handlers des événements.
+// EventHandlers encapsulates the dependencies for event-related HTTP handlers.
+// It holds a reference to the EventService, which contains the business logic for events.
 type EventHandlers struct {
 	eventService *services.EventService
 }
 
-// NewEventHandlers crée une nouvelle instance de EventHandlers.
+// NewEventHandlers creates a new instance of EventHandlers.
+// It takes an EventService as a dependency, adhering to the dependency inversion principle.
 func NewEventHandlers(eventService *services.EventService) *EventHandlers {
 	return &EventHandlers{eventService: eventService}
 }
 
-// ListEvents affiche la liste des événements.
+// ListEvents displays a list of events for the authenticated user.
+// It retrieves events from the EventService and renders them using the "events.tmpl" template.
 func (h *EventHandlers) ListEvents(c *gin.Context) {
-	// Récupérer l'utilisateur connecté depuis la session
+	// Retrieve the authenticated user from the session.
 	session := c.MustGet("session").(sessions.Session)
 	user, ok := session.Get("user").(models.User)
 	if !ok {
@@ -32,32 +35,35 @@ func (h *EventHandlers) ListEvents(c *gin.Context) {
 		return
 	}
 
-	// Récupérer les événements associés à cet utilisateur
+	// Retrieve events associated with the current user.
 	events, err := h.eventService.GetEventsByUserID(user.ID)
 	if err != nil {
-		// Gérer l'erreur, par exemple, afficher un message d'erreur
+		// Handle error, e.g., display an error message to the user.
 		c.HTML(http.StatusInternalServerError, "error.tmpl", gin.H{"error": "Erreur lors de la récupération des événements"})
 		return
 	}
 
-	// Récupérer le jeton CSRF pour la navbar
+	// Retrieve CSRF token for the navigation bar.
 	csrfToken := c.MustGet("csrf_token").(string)
 	navbar := components.NavBar(user, csrfToken, session)
 
+	// Render the events list page.
 	c.HTML(http.StatusOK, "events.tmpl", gin.H{
 		"title":      "Mes Événements",
 		"navbar":     navbar,
 		"user":       user,
 		"events":     events,
-		"csrf_token": csrfToken, // Ajout du jeton CSRF au contexte du template
+		"csrf_token": csrfToken, // Add CSRF token to the template context
 	})
+	// Save session changes if any (e.g., flash messages).
 	if err := session.Save(); err != nil {
-		// Gérer l'erreur de sauvegarde de session si nécessaire
+		// Handle session save error if necessary
 		// log.Printf("Erreur lors de la sauvegarde de session dans ListEvents: %v", err)
 	}
 }
 
-// ShowCreateEventForm affiche le formulaire de création d'un nouvel événement.
+// ShowCreateEventForm displays the form for creating a new event.
+// It provides default values for start and end dates for convenience.
 func (h *EventHandlers) ShowCreateEventForm(c *gin.Context) {
 	session := c.MustGet("session").(sessions.Session)
 	user, ok := session.Get("user").(models.User)
@@ -69,20 +75,22 @@ func (h *EventHandlers) ShowCreateEventForm(c *gin.Context) {
 	csrfToken := c.MustGet("csrf_token").(string)
 	navbar := components.NavBar(user, csrfToken, session)
 
+	// Render the event creation form.
 	c.HTML(http.StatusOK, "event_form.tmpl", gin.H{
 		"title":      "Créer un nouvel événement",
 		"navbar":     navbar,
 		"user":       user,
 		"csrf_token": csrfToken,
-		"event":      models.Event{StartDate: time.Now(), EndDate: time.Now().Add(time.Hour)}, // Valeurs par défaut
+		"event":      models.Event{StartDate: time.Now(), EndDate: time.Now().Add(time.Hour)}, // Default values
 	})
 	if err := session.Save(); err != nil {
-		// Gérer l'erreur de sauvegarde de session si nécessaire
+		// Handle session save error if necessary
 		// log.Printf("Erreur lors de la sauvegarde de session dans ShowCreateEventForm: %v", err)
 	}
 }
 
-// CreateEvent gère la soumission du formulaire de création d'événement.
+// CreateEvent handles the submission of the new event creation form.
+// It binds the form data to an Event model, sets the UserID, and calls the service to create the event.
 func (h *EventHandlers) CreateEvent(c *gin.Context) {
 	session := c.MustGet("session").(sessions.Session)
 	user, ok := session.Get("user").(models.User)
@@ -92,22 +100,26 @@ func (h *EventHandlers) CreateEvent(c *gin.Context) {
 	}
 
 	var newEvent models.Event
+	// Bind form data to the newEvent struct. If binding fails, return a bad request error.
 	if err := c.ShouldBind(&newEvent); err != nil {
 		c.HTML(http.StatusBadRequest, "error.tmpl", gin.H{"error": "Données d'événement invalides: " + err.Error()})
 		return
 	}
 
-	newEvent.UserID = user.ID
+	newEvent.UserID = user.ID // Assign the current user's ID to the new event.
 
+	// Call the service to create the event. Handle any errors during creation.
 	if err := h.eventService.CreateEvent(&newEvent); err != nil {
 		c.HTML(http.StatusInternalServerError, "error.tmpl", gin.H{"error": "Erreur lors de la création de l'événement: " + err.Error()})
 		return
 	}
 
+	// Redirect to the events list page upon successful creation.
 	c.Redirect(http.StatusFound, "/events")
 }
 
-// ShowEditEventForm affiche le formulaire de modification d'un événement existant.
+// ShowEditEventForm displays the form for editing an existing event.
+// It retrieves the event by ID, ensures it belongs to the authenticated user, and populates the form.
 func (h *EventHandlers) ShowEditEventForm(c *gin.Context) {
 	session := c.MustGet("session").(sessions.Session)
 	user, ok := session.Get("user").(models.User)
@@ -116,19 +128,21 @@ func (h *EventHandlers) ShowEditEventForm(c *gin.Context) {
 		return
 	}
 
+	// Parse the event ID from the URL parameter.
 	eventID, err := strconv.ParseUint(c.Param("id"), 10, 64)
 	if err != nil {
 		c.HTML(http.StatusBadRequest, "error.tmpl", gin.H{"error": "ID d'événement invalide"})
 		return
 	}
 
+	// Retrieve the event from the service.
 	event, err := h.eventService.GetEventByID(uint(eventID))
 	if err != nil {
 		c.HTML(http.StatusNotFound, "error.tmpl", gin.H{"error": "Événement non trouvé"})
 		return
 	}
 
-	// Vérifier que l'événement appartient bien à l'utilisateur connecté
+	// Verify that the event belongs to the authenticated user for security.
 	if event.UserID != user.ID {
 		c.HTML(http.StatusForbidden, "error.tmpl", gin.H{"error": "Accès non autorisé"})
 		return
@@ -137,6 +151,7 @@ func (h *EventHandlers) ShowEditEventForm(c *gin.Context) {
 	csrfToken := c.MustGet("csrf_token").(string)
 	navbar := components.NavBar(user, csrfToken, session)
 
+	// Render the event edit form.
 	c.HTML(http.StatusOK, "event_form.tmpl", gin.H{
 		"title":      "Modifier l'événement",
 		"navbar":     navbar,
@@ -145,12 +160,13 @@ func (h *EventHandlers) ShowEditEventForm(c *gin.Context) {
 		"event":      event,
 	})
 	if err := session.Save(); err != nil {
-		// Gérer l'erreur de sauvegarde de session si nécessaire
+		// Handle session save error if necessary
 		// log.Printf("Erreur lors de la sauvegarde de session dans ShowEditEventForm: %v", err)
 	}
 }
 
-// UpdateEvent gère la soumission du formulaire de modification d'événement.
+// UpdateEvent handles the submission of the event modification form.
+// It retrieves the existing event, binds updated data, ensures ownership, and calls the service to update.
 func (h *EventHandlers) UpdateEvent(c *gin.Context) {
 	session := c.MustGet("session").(sessions.Session)
 	user, ok := session.Get("user").(models.User)
@@ -159,6 +175,7 @@ func (h *EventHandlers) UpdateEvent(c *gin.Context) {
 		return
 	}
 
+	// Parse the event ID from the URL parameter.
 	eventID, err := strconv.ParseUint(c.Param("id"), 10, 64)
 	if err != nil {
 		c.HTML(http.StatusBadRequest, "error.tmpl", gin.H{"error": "ID d'événement invalide"})
@@ -166,12 +183,13 @@ func (h *EventHandlers) UpdateEvent(c *gin.Context) {
 	}
 
 	var updatedEvent models.Event
+	// Bind form data to a temporary updatedEvent struct.
 	if err := c.ShouldBind(&updatedEvent); err != nil {
 		c.HTML(http.StatusBadRequest, "error.tmpl", gin.H{"error": "Données d'événement invalides: " + err.Error()})
 		return
 	}
 
-	// Récupérer l'événement existant pour s'assurer qu'il appartient à l'utilisateur
+	// Retrieve the existing event to ensure it belongs to the user before updating.
 	existingEvent, err := h.eventService.GetEventByID(uint(eventID))
 	if err != nil {
 		c.HTML(http.StatusNotFound, "error.tmpl", gin.H{"error": "Événement non trouvé"})
@@ -183,21 +201,24 @@ func (h *EventHandlers) UpdateEvent(c *gin.Context) {
 		return
 	}
 
-	// Mettre à jour les champs de l'événement existant avec les données du formulaire
+	// Update the fields of the existing event with the new data from the form.
 	existingEvent.Title = updatedEvent.Title
 	existingEvent.Description = updatedEvent.Description
 	existingEvent.StartDate = updatedEvent.StartDate
 	existingEvent.EndDate = updatedEvent.EndDate
 
+	// Call the service to update the event. Handle any errors during update.
 	if err := h.eventService.UpdateEvent(existingEvent); err != nil {
 		c.HTML(http.StatusInternalServerError, "error.tmpl", gin.H{"error": "Erreur lors de la mise à jour de l'événement: " + err.Error()})
 		return
 	}
 
+	// Redirect to the events list page upon successful update.
 	c.Redirect(http.StatusFound, "/events")
 }
 
-// DeleteEvent gère la suppression d'un événement.
+// DeleteEvent handles the deletion of an event.
+// It retrieves the event by ID, ensures it belongs to the authenticated user, and calls the service to delete it.
 func (h *EventHandlers) DeleteEvent(c *gin.Context) {
 	session := c.MustGet("session").(sessions.Session)
 	user, ok := session.Get("user").(models.User)
@@ -206,13 +227,14 @@ func (h *EventHandlers) DeleteEvent(c *gin.Context) {
 		return
 	}
 
+	// Parse the event ID from the URL parameter.
 	eventID, err := strconv.ParseUint(c.Param("id"), 10, 64)
 	if err != nil {
 		c.HTML(http.StatusBadRequest, "error.tmpl", gin.H{"error": "ID d'événement invalide"})
 		return
 	}
 
-	// Vérifier que l'événement appartient bien à l'utilisateur connecté avant de supprimer
+	// Verify that the event belongs to the authenticated user before deletion.
 	existingEvent, err := h.eventService.GetEventByID(uint(eventID))
 	if err != nil {
 		c.HTML(http.StatusNotFound, "error.tmpl", gin.H{"error": "Événement non trouvé"})
@@ -224,10 +246,12 @@ func (h *EventHandlers) DeleteEvent(c *gin.Context) {
 		return
 	}
 
+	// Call the service to delete the event. Handle any errors during deletion.
 	if err := h.eventService.DeleteEvent(uint(eventID)); err != nil {
 		c.HTML(http.StatusInternalServerError, "error.tmpl", gin.H{"error": "Erreur lors de la suppression de l'événement: " + err.Error()})
 		return
 	}
 
+	// Redirect to the events list page upon successful deletion.
 	c.Redirect(http.StatusFound, "/events")
 }

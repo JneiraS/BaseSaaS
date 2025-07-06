@@ -8,17 +8,20 @@ import (
 	"github.com/JneiraS/BaseSasS/internal/domain/repositories"
 )
 
-// FinanceService encapsule la logique métier pour la gestion financière.
+// FinanceService encapsulates the business logic for financial management.
+// It interacts with the TransactionRepository to perform CRUD operations and financial calculations.
 type FinanceService struct {
 	transactionRepo repositories.TransactionRepository
 }
 
-// NewFinanceService crée une nouvelle instance de FinanceService.
+// NewFinanceService creates a new instance of FinanceService.
+// It takes a TransactionRepository as a dependency, adhering to the dependency inversion principle.
 func NewFinanceService(transactionRepo repositories.TransactionRepository) *FinanceService {
 	return &FinanceService{transactionRepo: transactionRepo}
 }
 
-// CreateTransaction gère la création d'une nouvelle transaction.
+// CreateTransaction handles the creation of a new financial transaction.
+// It performs validation on the transaction data before persisting it via the repository.
 func (s *FinanceService) CreateTransaction(transaction *models.Transaction) error {
 	if err := s.validateTransaction(transaction); err != nil {
 		return err
@@ -26,17 +29,18 @@ func (s *FinanceService) CreateTransaction(transaction *models.Transaction) erro
 	return s.transactionRepo.CreateTransaction(transaction)
 }
 
-// GetTransactionByID récupère une transaction par son ID.
+// GetTransactionByID retrieves a financial transaction by its unique identifier.
 func (s *FinanceService) GetTransactionByID(id uint) (*models.Transaction, error) {
 	return s.transactionRepo.FindTransactionByID(id)
 }
 
-// GetTransactionsByUserID récupère toutes les transactions d'un utilisateur.
+// GetTransactionsByUserID retrieves all financial transactions associated with a specific user ID.
 func (s *FinanceService) GetTransactionsByUserID(userID uint) ([]models.Transaction, error) {
 	return s.transactionRepo.FindTransactionsByUserID(userID)
 }
 
-// UpdateTransaction gère la mise à jour d'une transaction.
+// UpdateTransaction handles the update of an existing financial transaction.
+// It performs validation on the updated transaction data before persisting the changes.
 func (s *FinanceService) UpdateTransaction(transaction *models.Transaction) error {
 	if err := s.validateTransaction(transaction); err != nil {
 		return err
@@ -44,22 +48,25 @@ func (s *FinanceService) UpdateTransaction(transaction *models.Transaction) erro
 	return s.transactionRepo.UpdateTransaction(transaction)
 }
 
-// DeleteTransaction gère la suppression d'une transaction.
+// DeleteTransaction handles the deletion of a financial transaction by its unique identifier.
 func (s *FinanceService) DeleteTransaction(id uint) error {
 	return s.transactionRepo.DeleteTransaction(id)
 }
 
-// GetTotalIncome retourne le total des revenus pour un utilisateur donné.
+// GetTotalIncome returns the total sum of all income transactions for a given user ID.
+// It delegates the call to the underlying repository.
 func (s *FinanceService) GetTotalIncome(userID uint) (float64, error) {
 	return s.transactionRepo.GetTotalIncome(userID)
 }
 
-// GetTotalExpenses retourne le total des dépenses pour un utilisateur donné.
+// GetTotalExpenses returns the total sum of all expense transactions for a given user ID.
+// It delegates the call to the underlying repository.
 func (s *FinanceService) GetTotalExpenses(userID uint) (float64, error) {
 	return s.transactionRepo.GetTotalExpenses(userID)
 }
 
-// validateTransaction valide les données d'une transaction.
+// validateTransaction performs business logic validation on a Transaction model.
+// It checks for valid amount, non-empty description, and a valid date.
 func (s *FinanceService) validateTransaction(transaction *models.Transaction) error {
 	transaction.Description = strings.TrimSpace(transaction.Description)
 

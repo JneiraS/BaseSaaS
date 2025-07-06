@@ -11,6 +11,13 @@ Le projet est construit avec une **Architecture Hexagonale** pour garantir une s
 - **Frontend Basé sur les Composants** : Rendu HTML côté serveur avec des composants d'interface utilisateur réutilisables grâce à [Gomponents](https://www.gomponents.com/).
 - **Architecture Claire** : Suit les principes de l'Architecture Hexagonale (Ports and Adapters) pour la maintenabilité et la testabilité.
 - **Configuration Facile** : Configuration simplifiée à l'aide d'un fichier `.env`.
+- **Gestion des Membres** : Fonctionnalités complètes pour ajouter, modifier, supprimer et lister les membres de l'association, y compris le suivi des paiements.
+- **Gestion des Événements** : Création, modification, suppression et affichage des événements de l'association.
+- **Gestion Financière** : Suivi des transactions (revenus et dépenses) et calcul du solde net.
+- **Gestion Documentaire** : Téléchargement, téléchargement et suppression sécurisés de documents.
+- **Sondages** : Création et gestion de sondages pour les membres.
+- **Communication** : Envoi d'e-mails aux membres de l'association.
+- **Tableau de Bord** : Vue d'ensemble des statistiques clés (membres, finances, documents).
 
 ## 🏗️ Architecture
 
@@ -22,6 +29,22 @@ Le projet suit une Architecture Hexagonale.
 - `components/` : Définit les composants d'interface utilisateur réutilisables avec Gomponents.
 - `templates/` : Contient les modèles HTML.
 - `main.go` : Le point d'entrée de l'application, responsable de lier tous les éléments.
+
+## 📁 Structure du Projet
+
+- `components/`: Composants HTML réutilisables construits avec Gomponents.
+- `data/`: Stockage des données non-base de données, comme les documents téléchargés.
+- `internal/`: Code interne de l'application, suivant l'architecture hexagonale.
+  - `adapters/`: Implémentations des adaptateurs (handlers HTTP, middleware).
+  - `config/`: Gestion de la configuration de l'application.
+  - `database/`: Initialisation de la base de données et migrations.
+  - `domain/`: Cœur de la logique métier (modèles, interfaces de dépôts).
+  - `services/`: Implémentations des services métier.
+- `static/`: Fichiers statiques (CSS, JavaScript, images).
+- `templates/`: Fichiers de modèles HTML pour le rendu des pages.
+- `go.mod`, `go.sum`: Fichiers de gestion des dépendances Go.
+- `main.go`: Point d'entrée principal de l'application.
+- `.env.example`, `.gitignore`, `README.md`: Fichiers de configuration et de documentation du projet.
 
 ## 🚀 Démarrage Rapide
 
@@ -105,3 +128,15 @@ go test ./internal/...
 - [go-oidc](https://github.com/coreos/go-oidc) : Bibliothèque cliente OIDC.
 - [Gomponents](https://github.com/maragudk/gomponents) : Génération de HTML basée sur les composants.
 - [godotenv](https://github.com/joho/godotenv) : Chargement des variables d'environnement.
+
+## 🤝 Contribution
+
+Les contributions sont les bienvenues ! Veuillez suivre ces étapes :
+
+1.  Fork le dépôt.
+2.  Créez une branche pour votre fonctionnalité (`git checkout -b feature/AmazingFeature`).
+3.  Commitez vos modifications (`git commit -m 'Add some AmazingFeature'`).
+4.  Poussez vers la branche (`git push origin feature/AmazingFeature`).
+5.  Ouvrez une Pull Request.
+
+Assurez-vous que votre code respecte les conventions de style existantes et que tous les tests passent.

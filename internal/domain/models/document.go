@@ -6,15 +6,17 @@ import (
 	"gorm.io/gorm"
 )
 
-// Document représente un document téléchargé par un utilisateur.
+// Document represents a file uploaded by a user within the application.
+// It embeds gorm.Model for common fields like ID, CreatedAt, UpdatedAt, and DeletedAt.
 type Document struct {
 	gorm.Model
-	Name       string    `json:"name" form:"name"`
-	FilePath   string    `json:"file_path"` // Chemin relatif ou absolu du fichier sur le serveur
-	FileSize   int64     `json:"file_size"` // Taille du fichier en octets
-	MimeType   string    `json:"mime_type"` // Type MIME du fichier
-	UploadDate time.Time `json:"upload_date"`
+	Name       string    `json:"name" form:"name"`       // The original name of the uploaded document.
+	FilePath   string    `json:"file_path"`             // The relative or absolute path to the file on the server's file system.
+	FileSize   int64     `json:"file_size"`             // The size of the file in bytes.
+	MimeType   string    `json:"mime_type"`             // The MIME type of the file (e.g., "application/pdf", "image/png").
+	UploadDate time.Time `json:"upload_date"`           // The timestamp when the document was uploaded.
 
-	// UserID est l'ID de l'utilisateur de l'application qui a téléchargé ce document.
+	// UserID is the ID of the application user who uploaded this document.
+	// This establishes a relationship between the document and its owner.
 	UserID uint `json:"user_id"`
 }

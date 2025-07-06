@@ -7,22 +7,25 @@ import (
 	"gorm.io/gorm"
 )
 
-// TransactionDB représente le modèle de transaction pour la persistance GORM.
+// TransactionDB represents the database model for a financial transaction, used for GORM persistence.
+// It includes GORM's Model for common fields like ID, CreatedAt, UpdatedAt, and DeletedAt.
 type TransactionDB struct {
 	gorm.Model
-	Amount      float64
-	Type        models.TransactionType
-	Description string
-	Date        time.Time
-	UserID      uint
+	Amount      float64                 // The monetary amount of the transaction.
+	Type        models.TransactionType  // The type of transaction (Income or Expense).
+	Description string                  // A brief description of the transaction.
+	Date        time.Time               // The date when the transaction occurred.
+	UserID      uint                    // Foreign key linking to the User who recorded this transaction.
 }
 
-// TableName spécifie le nom de la table pour le modèle TransactionDB.
+// TableName specifies the table name for the TransactionDB model in the database.
+// This overrides GORM's default naming convention.
 func (TransactionDB) TableName() string {
 	return "transactions"
 }
 
-// TransactionRepository définit l'interface pour les opérations de persistance des transactions.
+// TransactionRepository defines the interface for transaction persistence operations.
+// It abstracts the underlying database implementation.
 type TransactionRepository interface {
 	CreateTransaction(transaction *models.Transaction) error
 	FindTransactionByID(id uint) (*models.Transaction, error)
@@ -33,27 +36,32 @@ type TransactionRepository interface {
 	GetTotalExpenses(userID uint) (float64, error)
 }
 
-// GormTransactionRepository est une implémentation de TransactionRepository utilisant GORM.
+// GormTransactionRepository is an implementation of TransactionRepository that uses GORM
+// for interacting with a relational database.
 type GormTransactionRepository struct {
-	db *gorm.DB
+	db *gorm.DB // GORM database client
 }
 
-// NewGormTransactionRepository crée une nouvelle instance de GormTransactionRepository.
+// NewGormTransactionRepository creates a new instance of GormTransactionRepository.
+// It takes a GORM DB instance as a dependency.
 func NewGormTransactionRepository(db *gorm.DB) *GormTransactionRepository {
 	return &GormTransactionRepository{db: db}
 }
 
-// CreateTransaction crée une nouvelle transaction.
+// CreateTransaction persists a new transaction to the database.
+// It converts the domain model Transaction to a database-specific TransactionDB model
+// before saving and then updates the domain model with the generated ID.
 func (r *GormTransactionRepository) CreateTransaction(transaction *models.Transaction) error {
 	transactionDB := toTransactionDB(transaction)
 	if err := r.db.Create(&transactionDB).Error; err != nil {
 		return err
 	}
-	*transaction = *toTransaction(transactionDB)
+	*transaction = *toTransaction(transactionDB) // Update the original transaction with DB-generated fields (e.g., ID)
 	return nil
 }
 
-// FindTransactionByID recherche une transaction par son ID.
+// FindTransactionByID retrieves a transaction from the database by its ID.
+// It returns the transaction as a domain model or an error if not found.
 func (r *GormTransactionRepository) FindTransactionByID(id uint) (*models.Transaction, error) {
 	var transactionDB TransactionDB
 	result := r.db.First(&transactionDB, id)
@@ -63,7 +71,8 @@ func (r *GormTransactionRepository) FindTransactionByID(id uint) (*models.Transa
 	return toTransaction(&transactionDB), nil
 }
 
-// FindTransactionsByUserID recherche toutes les transactions pour un utilisateur donné.
+// FindTransactionsByUserID retrieves all transactions associated with a specific user ID.
+// It queries the database for transactions where the UserID matches the provided ID.
 func (r *GormTransactionRepository) FindTransactionsByUserID(userID uint) ([]models.Transaction, error) {
 	var transactionsDB []TransactionDB
 	if err := r.db.Where("user_id = ?", userID).Find(&transactionsDB).Error; err != nil {
@@ -76,18 +85,20 @@ func (r *GormTransactionRepository) FindTransactionsByUserID(userID uint) ([]mod
 	return transactions, nil
 }
 
-// UpdateTransaction met à jour une transaction existante.
+// UpdateTransaction updates an existing transaction in the database.
+// It converts the domain model to a database model and saves the changes.
 func (r *GormTransactionRepository) UpdateTransaction(transaction *models.Transaction) error {
 	transactionDB := toTransactionDB(transaction)
 	return r.db.Save(&transactionDB).Error
 }
 
-// DeleteTransaction supprime une transaction par son ID.
+// DeleteTransaction deletes a transaction from the database by its ID.
 func (r *GormTransactionRepository) DeleteTransaction(id uint) error {
 	return r.db.Delete(&TransactionDB{}, id).Error
 }
 
-// GetTotalIncome retourne le total des revenus pour un utilisateur donné.
+// GetTotalIncome returns the sum of all income transactions for a given user ID.
+// It queries the database for transactions of type TypeIncome and sums their amounts.
 func (r *GormTransactionRepository) GetTotalIncome(userID uint) (float64, error) {
 	var total float64
 	if err := r.db.Model(&TransactionDB{}).Where("user_id = ? AND type = ?", userID, models.TypeIncome).Select("sum(amount)").Row().Scan(&total); err != nil {
@@ -96,7 +107,8 @@ func (r *GormTransactionRepository) GetTotalIncome(userID uint) (float64, error)
 	return total, nil
 }
 
-// GetTotalExpenses retourne le total des dépenses pour un utilisateur donné.
+// GetTotalExpenses returns the sum of all expense transactions for a given user ID.
+// It queries the database for transactions of type TypeExpense and sums their amounts.
 func (r *GormTransactionRepository) GetTotalExpenses(userID uint) (float64, error) {
 	var total float64
 	if err := r.db.Model(&TransactionDB{}).Where("user_id = ? AND type = ?", userID, models.TypeExpense).Select("sum(amount)").Row().Scan(&total); err != nil {
@@ -105,7 +117,8 @@ func (r *GormTransactionRepository) GetTotalExpenses(userID uint) (float64, erro
 	return total, nil
 }
 
-// toTransactionDB convertit un modèle de domaine Transaction en un modèle de base de données TransactionDB.
+// toTransactionDB converts a domain Transaction model to a database-specific TransactionDB model.
+// This is used before persisting the transaction to the database.
 func toTransactionDB(t *models.Transaction) *TransactionDB {
 	return &TransactionDB{
 		Model:       gorm.Model{ID: t.ID, CreatedAt: t.CreatedAt, UpdatedAt: t.UpdatedAt, DeletedAt: t.DeletedAt},
@@ -117,7 +130,8 @@ func toTransactionDB(t *models.Transaction) *TransactionDB {
 	}
 }
 
-// toTransaction convertit un modèle de base de données TransactionDB en un modèle de domaine Transaction.
+// toTransaction converts a database-specific TransactionDB model back to a domain Transaction model.
+// This is used after retrieving data from the database.
 func toTransaction(tdb *TransactionDB) *models.Transaction {
 	return &models.Transaction{
 		Model:       gorm.Model{ID: tdb.ID, CreatedAt: tdb.CreatedAt, UpdatedAt: tdb.UpdatedAt, DeletedAt: tdb.DeletedAt},

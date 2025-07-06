@@ -9,17 +9,20 @@ import (
 	"github.com/JneiraS/BaseSasS/internal/domain/repositories"
 )
 
-// ProfileService encapsule la logique métier pour les profils utilisateur
+// ProfileService encapsulates the business logic for user profiles.
+// It interacts with the UserRepository to perform operations related to user data.
 type ProfileService struct {
 	userRepo repositories.UserRepository
 }
 
-// NewProfileService crée une nouvelle instance du service profil
+// NewProfileService creates a new instance of ProfileService.
+// It takes a UserRepository as a dependency, adhering to the dependency inversion principle.
 func NewProfileService(userRepo repositories.UserRepository) *ProfileService {
 	return &ProfileService{userRepo: userRepo}
 }
 
-// validateUserInput valide les données utilisateur
+// validateUserInput performs validation on user input data.
+// It checks for non-empty name, name length, and valid email format.
 func (ps *ProfileService) validateUserInput(user models.User) error {
 	if strings.TrimSpace(user.Name) == "" {
 		return fmt.Errorf("le nom ne peut pas être vide")
@@ -29,7 +32,7 @@ func (ps *ProfileService) validateUserInput(user models.User) error {
 		return fmt.Errorf("le nom ne peut pas dépasser 100 caractères")
 	}
 
-	emailRegex := regexp.MustCompile(`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`)
+	emailRegex := regexp.MustCompile(`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}`)
 	if !emailRegex.MatchString(user.Email) {
 		return fmt.Errorf("format d'email invalide")
 	}
@@ -37,7 +40,9 @@ func (ps *ProfileService) validateUserInput(user models.User) error {
 	return nil
 }
 
-// UpdateUser met à jour un utilisateur en base de données avec transaction
+// UpdateUser updates a user's profile in the database.
+// It first validates the input data, then retrieves the existing user,
+// updates only the modifiable fields, and finally persists the changes.
 func (ps *ProfileService) UpdateUser(userID uint, updatedData models.User) (*models.User, error) {
 	if err := ps.validateUserInput(updatedData); err != nil {
 		return nil, err
@@ -48,10 +53,10 @@ func (ps *ProfileService) UpdateUser(userID uint, updatedData models.User) (*mod
 		return nil, fmt.Errorf("utilisateur non trouvé: %w", err)
 	}
 
-	// Mettre à jour uniquement les champs modifiables
+	// Update only the modifiable fields from the provided updatedData.
 	user.Username = strings.TrimSpace(updatedData.Username)
 
-	// Sauvegarder les modifications
+	// Save the changes to the database.
 	if err := ps.userRepo.UpdateUser(user); err != nil {
 		return nil, fmt.Errorf("erreur lors de la sauvegarde: %w", err)
 	}

@@ -9,17 +9,20 @@ import (
 	"github.com/JneiraS/BaseSasS/internal/domain/repositories"
 )
 
-// MemberService encapsule la logique métier pour la gestion des membres.
+// MemberService encapsulates the business logic for managing members.
+// It interacts with the MemberRepository to perform CRUD operations and other member-related tasks.
 type MemberService struct {
 	memberRepo repositories.MemberRepository
 }
 
-// NewMemberService crée une nouvelle instance de MemberService.
+// NewMemberService creates a new instance of MemberService.
+// It takes a MemberRepository as a dependency, adhering to the dependency inversion principle.
 func NewMemberService(memberRepo repositories.MemberRepository) *MemberService {
 	return &MemberService{memberRepo: memberRepo}
 }
 
-// CreateMember gère la création d'un nouveau membre.
+// CreateMember handles the creation of a new member.
+// It performs validation on the member data before persisting it via the repository.
 func (s *MemberService) CreateMember(member *models.Member) error {
 	if err := s.validateMember(member); err != nil {
 		return err
@@ -27,17 +30,18 @@ func (s *MemberService) CreateMember(member *models.Member) error {
 	return s.memberRepo.CreateMember(member)
 }
 
-// GetMemberByID récupère un membre par son ID.
+// GetMemberByID retrieves a member by its unique identifier.
 func (s *MemberService) GetMemberByID(id uint) (*models.Member, error) {
 	return s.memberRepo.FindMemberByID(id)
 }
 
-// GetMembersByUserID récupère tous les membres d'un utilisateur.
+// GetMembersByUserID retrieves all members associated with a specific user ID.
 func (s *MemberService) GetMembersByUserID(userID uint) ([]models.Member, error) {
 	return s.memberRepo.FindMembersByUserID(userID)
 }
 
-// UpdateMember gère la mise à jour d'un membre.
+// UpdateMember handles the update of an existing member.
+// It performs validation on the updated member data before persisting the changes.
 func (s *MemberService) UpdateMember(member *models.Member) error {
 	if err := s.validateMember(member); err != nil {
 		return err
@@ -45,27 +49,31 @@ func (s *MemberService) UpdateMember(member *models.Member) error {
 	return s.memberRepo.UpdateMember(member)
 }
 
-// DeleteMember gère la suppression d'un membre.
+// DeleteMember handles the deletion of a member by its unique identifier.
 func (s *MemberService) DeleteMember(id uint) error {
 	return s.memberRepo.DeleteMember(id)
 }
 
-// MarkPaymentReceived met à jour la date du dernier paiement pour un membre.
+// MarkPaymentReceived updates the last payment date for a member.
+// It calls the repository to update the specific field.
 func (s *MemberService) MarkPaymentReceived(memberID uint, paymentDate time.Time) error {
 	return s.memberRepo.UpdateLastPaymentDate(memberID, paymentDate)
 }
 
-// GetTotalMembersCount retourne le nombre total de membres pour un utilisateur donné.
+// GetTotalMembersCount returns the total number of members for a given user ID.
+// It delegates the call to the underlying repository.
 func (s *MemberService) GetTotalMembersCount(userID uint) (int64, error) {
 	return s.memberRepo.GetTotalMembersCount(userID)
 }
 
-// GetMembersCountByStatus retourne le nombre de membres par statut pour un utilisateur donné.
+// GetMembersCountByStatus returns the count of members grouped by their membership status
+// for a given user ID. It delegates the call to the underlying repository.
 func (s *MemberService) GetMembersCountByStatus(userID uint) (map[models.MembershipStatus]int64, error) {
 	return s.memberRepo.GetMembersCountByStatus(userID)
 }
 
-// validateMember valide les données d'un membre.
+// validateMember performs business logic validation on a Member model.
+// It checks for required fields and can be extended for more complex validations (e.g., email format).
 func (s *MemberService) validateMember(member *models.Member) error {
 	member.FirstName = strings.TrimSpace(member.FirstName)
 	member.LastName = strings.TrimSpace(member.LastName)
@@ -80,7 +88,7 @@ func (s *MemberService) validateMember(member *models.Member) error {
 	if member.Email == "" {
 		return fmt.Errorf("l'email est requis")
 	}
-	// Idéalement, ajouter une validation d'email plus robuste ici.
+	// Ideally, add more robust email validation here.
 
 	return nil
 }

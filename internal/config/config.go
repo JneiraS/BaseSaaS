@@ -7,32 +7,43 @@ import (
 	"strconv"
 )
 
+// Config holds all application-wide configuration settings.
+// These settings are typically loaded from environment variables or a .env file.
 type Config struct {
-	OIDCProviderURL       string
-	ClientID              string
-	ClientSecret          string
-	RedirectURL           string
-	SessionSecret         string
-	SessionMaxAge         int
-	SessionHttpOnly       bool
-	SessionSecure         bool
-	SessionSameSite       string
-	AppURL                string
-	CookieName            string
-	CSRFSecret            string
-	ContentSecurityPolicy string
+	// OIDC (OpenID Connect) Configuration
+	OIDCProviderURL string // URL of the OIDC identity provider (e.g., Zitadel, Auth0)
+	ClientID        string // Client ID for the OIDC application
+	ClientSecret    string // Client Secret for the OIDC application
+	RedirectURL     string // Callback URL after successful authentication
 
-	// SMTP Configuration
-	SMTPHost     string
-	SMTPPort     int
-	SMTPUsername string
-	SMTPPassword string
-	EmailSender  string
+	// Session Management Configuration
+	SessionSecret   string // Secret key used to encrypt and sign session cookies
+	SessionMaxAge   int    // Maximum age of the session cookie in seconds
+	SessionHttpOnly bool   // If true, the session cookie is only accessible via HTTP(S) requests (not JavaScript)
+	SessionSecure   bool   // If true, the session cookie is only sent over HTTPS
+	SessionSameSite string // SameSite policy for the session cookie (e.g., "Lax", "Strict", "None")
+	AppURL          string // Base URL of the application
+	CookieName      string // Name of the session cookie
 
-	// Document Storage
-	DocumentStoragePath string
+	// CSRF (Cross-Site Request Forgery) Protection Configuration
+	CSRFSecret string // Secret key for CSRF token generation and validation
+
+	// Security Headers Configuration
+	ContentSecurityPolicy string // Value for the Content-Security-Policy HTTP header
+
+	// SMTP (Simple Mail Transfer Protocol) Configuration for sending emails
+	SMTPHost     string // SMTP server host
+	SMTPPort     int    // SMTP server port
+	SMTPUsername string // Username for SMTP authentication
+	SMTPPassword string // Password for SMTP authentication
+	EmailSender  string // Email address used as the sender
+
+	// Document Storage Configuration
+	DocumentStoragePath string // File system path where uploaded documents are stored
 }
 
+// LoadConfig loads application configuration from environment variables.
+// It sets default values for optional parameters and performs basic validation.
 func LoadConfig() (*Config, error) {
 	cfg := &Config{
 		OIDCProviderURL:       os.Getenv("OIDC_PROVIDER_URL"),
@@ -40,9 +51,9 @@ func LoadConfig() (*Config, error) {
 		ClientSecret:          os.Getenv("CLIENT_SECRET"),
 		RedirectURL:           getEnv("OIDC_REDIRECT_URL", "http://localhost:3000/callback"),
 		SessionSecret:         os.Getenv("SESSION_SECRET"),
-		SessionMaxAge:         getEnvAsInt("SESSION_MAX_AGE", 86400),    // 24 heures
-		SessionHttpOnly:       getEnvAsBool("SESSION_HTTP_ONLY", false), // true en production
-		SessionSecure:         getEnvAsBool("SESSION_SECURE", false),    // true en production
+		SessionMaxAge:         getEnvAsInt("SESSION_MAX_AGE", 86400),    // 24 hours
+		SessionHttpOnly:       getEnvAsBool("SESSION_HTTP_ONLY", false), // true in production
+		SessionSecure:         getEnvAsBool("SESSION_SECURE", false),    // true in production
 		SessionSameSite:       getEnv("SESSION_SAMESITE", "Lax"),
 		AppURL:                getEnv("APP_URL", "http://localhost:3000"),
 		CookieName:            getEnv("COOKIE_NAME", "mysession"),
@@ -58,6 +69,7 @@ func LoadConfig() (*Config, error) {
 		DocumentStoragePath: getEnv("DOCUMENT_STORAGE_PATH", "./data/documents"),
 	}
 
+	// Basic validation for essential OIDC configuration.
 	if cfg.ClientID == "" || cfg.ClientSecret == "" {
 		return nil, fmt.Errorf("CLIENT_ID ou CLIENT_SECRET manquant")
 	}
@@ -65,6 +77,7 @@ func LoadConfig() (*Config, error) {
 	return cfg, nil
 }
 
+// getEnv retrieves an environment variable or returns a default value if not set.
 func getEnv(key string, defaultVal string) string {
 	if value, exists := os.LookupEnv(key); exists {
 		return value
@@ -72,6 +85,7 @@ func getEnv(key string, defaultVal string) string {
 	return defaultVal
 }
 
+// getEnvAsInt retrieves an environment variable as an integer or returns a default value if not set or invalid.
 func getEnvAsInt(name string, defaultVal int) int {
 	valueStr := os.Getenv(name)
 	if value, err := strconv.Atoi(valueStr); err == nil {
@@ -80,6 +94,7 @@ func getEnvAsInt(name string, defaultVal int) int {
 	return defaultVal
 }
 
+// getEnvAsBool retrieves an environment variable as a boolean or returns a default value if not set or invalid.
 func getEnvAsBool(name string, defaultVal bool) bool {
 	valStr := os.Getenv(name)
 	if val, err := strconv.ParseBool(valStr); err == nil {
@@ -88,6 +103,7 @@ func getEnvAsBool(name string, defaultVal bool) bool {
 	return defaultVal
 }
 
+// SessionSameSiteMode converts the string representation of SameSite policy to http.SameSite enum.
 func (c *Config) SessionSameSiteMode() http.SameSite {
 	switch c.SessionSameSite {
 	case "Strict":
@@ -97,6 +113,6 @@ func (c *Config) SessionSameSiteMode() http.SameSite {
 	case "None":
 		return http.SameSiteNoneMode
 	default:
-		return http.SameSiteDefaultMode
+		return http.SameSiteDefaultMode // Default to Lax if an unknown value is provided.
 	}
 }

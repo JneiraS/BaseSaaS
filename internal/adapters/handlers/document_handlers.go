@@ -12,18 +12,22 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// DocumentHandlers encapsule les dépendances pour les handlers de documents.
+// DocumentHandlers encapsulates the dependencies for document-related HTTP handlers.
+// It holds a reference to the DocumentService, which contains the business logic for documents.
 type DocumentHandlers struct {
 	documentService *services.DocumentService
 }
 
-// NewDocumentHandlers crée une nouvelle instance de DocumentHandlers.
+// NewDocumentHandlers creates a new instance of DocumentHandlers.
+// It takes a DocumentService as a dependency, adhering to the dependency inversion principle.
 func NewDocumentHandlers(documentService *services.DocumentService) *DocumentHandlers {
 	return &DocumentHandlers{documentService: documentService}
 }
 
-// ListDocuments affiche la liste des documents.
+// ListDocuments displays a list of documents for the authenticated user.
+// It retrieves documents from the DocumentService and renders them using the "documents.tmpl" template.
 func (h *DocumentHandlers) ListDocuments(c *gin.Context) {
+	// Retrieve the authenticated user from the session.
 	session := c.MustGet("session").(sessions.Session)
 	user, ok := session.Get("user").(models.User)
 	if !ok {
@@ -31,6 +35,7 @@ func (h *DocumentHandlers) ListDocuments(c *gin.Context) {
 		return
 	}
 
+	// Retrieve documents associated with the current user.
 	documents, err := h.documentService.GetDocumentsByUserID(user.ID)
 	if err != nil {
 		log.Printf("ERREUR: Erreur lors de la récupération des documents: %v", err)
@@ -38,9 +43,11 @@ func (h *DocumentHandlers) ListDocuments(c *gin.Context) {
 		return
 	}
 
+	// Retrieve CSRF token for the navigation bar.
 	csrfToken := c.MustGet("csrf_token").(string)
 	navbar := components.NavBar(user, csrfToken, session)
 
+	// Render the documents list page.
 	c.HTML(http.StatusOK, "documents.tmpl", gin.H{
 		"title":      "Mes Documents",
 		"navbar":     navbar,
@@ -48,14 +55,16 @@ func (h *DocumentHandlers) ListDocuments(c *gin.Context) {
 		"documents":  documents,
 		"csrf_token": csrfToken,
 	})
+	// Save session changes if any (e.g., flash messages).
 	if err := session.Save(); err != nil {
-		// Gérer l'erreur de sauvegarde de session si nécessaire
+		// Handle session save error if necessary
 		// log.Printf("Erreur lors de la sauvegarde de session dans ListDocuments: %v", err)
 	}
 }
 
-// ShowUploadForm affiche le formulaire de téléchargement de document.
+// ShowUploadForm displays the form for uploading a new document.
 func (h *DocumentHandlers) ShowUploadForm(c *gin.Context) {
+	// Retrieve the authenticated user from the session.
 	session := c.MustGet("session").(sessions.Session)
 	user, ok := session.Get("user").(models.User)
 	if !ok {
@@ -63,23 +72,28 @@ func (h *DocumentHandlers) ShowUploadForm(c *gin.Context) {
 		return
 	}
 
+	// Retrieve CSRF token for the navigation bar.
 	csrfToken := c.MustGet("csrf_token").(string)
 	navbar := components.NavBar(user, csrfToken, session)
 
+	// Render the document upload form page.
 	c.HTML(http.StatusOK, "document_upload_form.tmpl", gin.H{
 		"title":      "Télécharger un document",
 		"navbar":     navbar,
 		"user":       user,
 		"csrf_token": csrfToken,
 	})
+	// Save session changes if any.
 	if err := session.Save(); err != nil {
-		// Gérer l'erreur de sauvegarde de session si nécessaire
+		// Handle session save error if necessary
 		// log.Printf("Erreur lors de la sauvegarde de session dans ShowUploadForm: %v", err)
 	}
 }
 
-// UploadDocument gère le téléchargement de documents.
+// UploadDocument handles the submission of the document upload form.
+// It retrieves the file and its name from the form, and calls the service to handle the upload and database record creation.
 func (h *DocumentHandlers) UploadDocument(c *gin.Context) {
+	// Retrieve the authenticated user from the session.
 	session := c.MustGet("session").(sessions.Session)
 	user, ok := session.Get("user").(models.User)
 	if !ok {
@@ -87,6 +101,7 @@ func (h *DocumentHandlers) UploadDocument(c *gin.Context) {
 		return
 	}
 
+	// Retrieve the uploaded file from the form.
 	file, err := c.FormFile("document")
 	if err != nil {
 		log.Printf("ERREUR: Erreur lors de la récupération du fichier: %v", err)
@@ -94,19 +109,20 @@ func (h *DocumentHandlers) UploadDocument(c *gin.Context) {
 		return
 	}
 
-	// Récupérer le nom du document depuis le formulaire (si fourni)
+	// Get the document name from the form (if provided). Use the original filename if not provided.
 	documentName := c.PostForm("name")
 	if documentName == "" {
-		documentName = file.Filename // Utiliser le nom de fichier par défaut si non fourni
+		documentName = file.Filename
 	}
 
-	// Appeler le service pour gérer le téléchargement et l'enregistrement en DB
+	// Call the service to handle the file upload and database record creation.
 	if err := h.documentService.UploadDocument(user.ID, documentName, file); err != nil {
 		log.Printf("ERREUR: Échec du téléchargement du document: %v", err)
 		c.HTML(http.StatusInternalServerError, "error.tmpl", gin.H{"error": "Échec du téléchargement du document: " + err.Error()})
 		return
 	}
 
+	// Add a success flash message and redirect to the documents list page.
 	session.AddFlash("Document téléchargé avec succès !", "success")
 	if err := session.Save(); err != nil {
 		log.Printf("ERREUR: Erreur lors de la sauvegarde de la session: %v", err)
@@ -114,8 +130,10 @@ func (h *DocumentHandlers) UploadDocument(c *gin.Context) {
 	c.Redirect(http.StatusFound, "/documents")
 }
 
-// DownloadDocument gère le téléchargement d'un document.
+// DownloadDocument handles the download of a specific document.
+// It retrieves the document by ID, ensures it belongs to the authenticated user, and serves the file.
 func (h *DocumentHandlers) DownloadDocument(c *gin.Context) {
+	// Retrieve the authenticated user from the session.
 	session := c.MustGet("session").(sessions.Session)
 	user, ok := session.Get("user").(models.User)
 	if !ok {
@@ -123,30 +141,34 @@ func (h *DocumentHandlers) DownloadDocument(c *gin.Context) {
 		return
 	}
 
+	// Parse the document ID from the URL parameter.
 	documentID, err := strconv.ParseUint(c.Param("id"), 10, 64)
 	if err != nil {
 		c.HTML(http.StatusBadRequest, "error.tmpl", gin.H{"error": "ID de document invalide"})
 		return
 	}
 
+	// Retrieve the document from the service.
 	document, err := h.documentService.GetDocumentByID(uint(documentID))
 	if err != nil {
 		c.HTML(http.StatusNotFound, "error.tmpl", gin.H{"error": "Document non trouvé"})
 		return
 	}
 
-	// Vérifier que le document appartient bien à l'utilisateur connecté
+	// Verify that the document belongs to the authenticated user for security.
 	if document.UserID != user.ID {
 		c.HTML(http.StatusForbidden, "error.tmpl", gin.H{"error": "Accès non autorisé"})
 		return
 	}
 
-	// Envoyer le fichier au client
+	// Serve the file to the client.
 	c.FileAttachment(document.FilePath, document.Name)
 }
 
-// DeleteDocument gère la suppression d'un document.
+// DeleteDocument handles the deletion of a document.
+// It retrieves the document by ID, ensures it belongs to the authenticated user, and calls the service to delete it.
 func (h *DocumentHandlers) DeleteDocument(c *gin.Context) {
+	// Retrieve the authenticated user from the session.
 	session := c.MustGet("session").(sessions.Session)
 	user, ok := session.Get("user").(models.User)
 	if !ok {
@@ -154,13 +176,14 @@ func (h *DocumentHandlers) DeleteDocument(c *gin.Context) {
 		return
 	}
 
+	// Parse the document ID from the URL parameter.
 	documentID, err := strconv.ParseUint(c.Param("id"), 10, 64)
 	if err != nil {
 		c.HTML(http.StatusBadRequest, "error.tmpl", gin.H{"error": "ID de document invalide"})
 		return
 	}
 
-	// Vérifier que le document appartient bien à l'utilisateur connecté avant de supprimer
+	// Verify that the document belongs to the authenticated user before deletion.
 	document, err := h.documentService.GetDocumentByID(uint(documentID))
 	if err != nil {
 		c.HTML(http.StatusNotFound, "error.tmpl", gin.H{"error": "Document non trouvé"})
@@ -172,6 +195,7 @@ func (h *DocumentHandlers) DeleteDocument(c *gin.Context) {
 		return
 	}
 
+	// Call the service to delete the document. Handle any errors during deletion.
 	if err := h.documentService.DeleteDocument(uint(documentID)); err != nil {
 		log.Printf("ERREUR: Échec de la suppression du document: %v", err)
 		session.AddFlash("Échec de la suppression du document: "+err.Error(), "error")
@@ -182,6 +206,7 @@ func (h *DocumentHandlers) DeleteDocument(c *gin.Context) {
 		return
 	}
 
+	// Add a success flash message and redirect to the documents list page.
 	session.AddFlash("Document supprimé avec succès !", "success")
 	if err := session.Save(); err != nil {
 		log.Printf("ERREUR: Erreur lors de la sauvegarde de la session: %v", err)

@@ -7,17 +7,20 @@ import (
 	"gorm.io/gorm"
 )
 
-// UserDB représente le modèle utilisateur pour la persistance GORM.
+// UserDB represents the database model for a user, used for GORM persistence.
+// It includes GORM's Model for common fields like ID, CreatedAt, UpdatedAt, DeletedAt.
 type UserDB struct {
 	gorm.Model
-	OIDCID         string `gorm:"column:oidc_id;uniqueIndex"`
-	Email          string
-	Name           string
-	Username       string
-	LastConnection time.Time
+	OIDCID         string `gorm:"column:oidc_id;uniqueIndex"` // OpenID Connect ID, unique identifier from the OIDC provider
+	Email          string                                  // User's email address
+	Name           string                                  // User's full name
+	Username       string                                  // User's chosen username
+	LastConnection time.Time                               // Timestamp of the user's last successful connection
 }
 
-// UserRepository définit l'interface pour les opérations de persistance des utilisateurs.
+// UserRepository defines the interface for user persistence operations.
+// It abstracts the underlying database implementation, allowing for different
+// data storage mechanisms (e.g., GORM, SQL, NoSQL) to be used interchangeably.
 type UserRepository interface {
 	FindUserByOIDCID(oidcID string) (*models.User, error)
 	FindUserByID(id uint) (*models.User, error)
@@ -25,23 +28,27 @@ type UserRepository interface {
 	UpdateUser(user *models.User) error
 }
 
-// GormUserRepository est une implémentation de UserRepository utilisant GORM.
+// GormUserRepository is an implementation of UserRepository that uses GORM
+// for interacting with a relational database.
 type GormUserRepository struct {
-	db *gorm.DB
+	db *gorm.DB // GORM database client
 }
 
-// NewGormUserRepository crée une nouvelle instance de GormUserRepository.
+// NewGormUserRepository creates a new instance of GormUserRepository.
+// It takes a GORM DB instance as a dependency.
 func NewGormUserRepository(db *gorm.DB) *GormUserRepository {
 	return &GormUserRepository{db: db}
 }
 
-// FindUserByOIDCID recherche un utilisateur par son OIDCID.
+// FindUserByOIDCID retrieves a user from the database by their OIDC ID.
+// It returns the user as a domain model or an error if not found.
 func (r *GormUserRepository) FindUserByOIDCID(oidcID string) (*models.User, error) {
 	var userDB UserDB
 	result := r.db.Where("oidc_id = ?", oidcID).First(&userDB)
 	if result.Error != nil {
 		return nil, result.Error
 	}
+	// Convert UserDB to domain User model.
 	return &models.User{
 		ID:             userDB.ID,
 		OIDCID:         userDB.OIDCID,
@@ -55,13 +62,15 @@ func (r *GormUserRepository) FindUserByOIDCID(oidcID string) (*models.User, erro
 	}, nil
 }
 
-// FindUserByID recherche un utilisateur par son ID.
+// FindUserByID retrieves a user from the database by their internal ID.
+// It returns the user as a domain model or an error if not found.
 func (r *GormUserRepository) FindUserByID(id uint) (*models.User, error) {
 	var userDB UserDB
 	result := r.db.First(&userDB, id)
 	if result.Error != nil {
 		return nil, result.Error
 	}
+	// Convert UserDB to domain User model.
 	return &models.User{
 		ID:             userDB.ID,
 		OIDCID:         userDB.OIDCID,
@@ -75,7 +84,9 @@ func (r *GormUserRepository) FindUserByID(id uint) (*models.User, error) {
 	}, nil
 }
 
-// CreateUser crée un nouvel utilisateur.
+// CreateUser persists a new user to the database.
+// It converts the domain model User to a database-specific UserDB model
+// before saving and then updates the domain model with the generated ID and timestamps.
 func (r *GormUserRepository) CreateUser(user *models.User) error {
 	userDB := UserDB{
 		OIDCID:         user.OIDCID,
@@ -87,7 +98,7 @@ func (r *GormUserRepository) CreateUser(user *models.User) error {
 	if err := r.db.Create(&userDB).Error; err != nil {
 		return err
 	}
-	// Mettre à jour l'ID du modèle de domaine après la création
+	// Update the original domain model with DB-generated fields (e.g., ID, CreatedAt).
 	user.ID = userDB.ID
 	user.CreatedAt = userDB.CreatedAt
 	user.UpdatedAt = userDB.UpdatedAt
@@ -95,7 +106,8 @@ func (r *GormUserRepository) CreateUser(user *models.User) error {
 	return nil
 }
 
-// UpdateUser met à jour un utilisateur existant.
+// UpdateUser updates an existing user in the database.
+// It converts the domain model to a database model and saves the changes.
 func (r *GormUserRepository) UpdateUser(user *models.User) error {
 	userDB := UserDB{
 		Model:          gorm.Model{ID: user.ID, CreatedAt: user.CreatedAt, UpdatedAt: user.UpdatedAt, DeletedAt: user.DeletedAt},

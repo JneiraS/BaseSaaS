@@ -5,45 +5,49 @@ import (
 	"gorm.io/gorm"
 )
 
-// PollDB représente le modèle de sondage pour la persistance GORM.
+// PollDB represents the database model for a poll, used for GORM persistence.
+// It includes GORM's Model for common fields and has a one-to-many relationship with OptionDB.
 type PollDB struct {
 	gorm.Model
-	Question string
-	UserID   uint
-	Options  []OptionDB `gorm:"foreignKey:PollID"`
+	Question string     // The question of the poll.
+	UserID   uint       // The ID of the user who created the poll.
+	Options  []OptionDB `gorm:"foreignKey:PollID"` // Associated options for this poll.
 }
 
-// OptionDB représente le modèle d'option pour la persistance GORM.
+// OptionDB represents the database model for a poll option, used for GORM persistence.
+// It includes GORM's Model for common fields and has a one-to-many relationship with VoteDB.
 type OptionDB struct {
 	gorm.Model
-	Text   string
-	PollID uint
-	Votes  []VoteDB `gorm:"foreignKey:OptionID"`
+	Text   string   // The text of the option.
+	PollID uint     // The ID of the poll this option belongs to.
+	Votes  []VoteDB `gorm:"foreignKey:OptionID"` // Associated votes for this option.
 }
 
-// VoteDB représente le modèle de vote pour la persistance GORM.
+// VoteDB represents the database model for a vote, used for GORM persistence.
+// It includes GORM's Model for common fields.
 type VoteDB struct {
 	gorm.Model
-	OptionID uint
-	UserID   uint
+	OptionID uint // The ID of the option that was voted for.
+	UserID   uint // The ID of the user who cast the vote.
 }
 
-// TableName spécifie le nom de la table pour le modèle PollDB.
+// TableName specifies the table name for the PollDB model.
 func (PollDB) TableName() string {
 	return "polls"
 }
 
-// TableName spécifie le nom de la table pour le modèle OptionDB.
+// TableName specifies the table name for the OptionDB model.
 func (OptionDB) TableName() string {
 	return "options"
 }
 
-// TableName spécifie le nom de la table pour le modèle VoteDB.
+// TableName specifies the table name for the VoteDB model.
 func (VoteDB) TableName() string {
 	return "votes"
 }
 
-// PollRepository définit l'interface pour les opérations de persistance des sondages.
+// PollRepository defines the interface for poll persistence operations.
+// It abstracts the underlying database implementation for polls and their options.
 type PollRepository interface {
 	CreatePoll(poll *models.Poll) error
 	FindPollByID(id uint) (*models.Poll, error)
@@ -51,32 +55,33 @@ type PollRepository interface {
 	FindAllPolls() ([]models.Poll, error)
 	UpdatePoll(poll *models.Poll) error
 	DeletePoll(id uint) error
-	GetPollResults(pollID uint) (map[uint]int64, error) // Retourne OptionID -> Count
+	GetPollResults(pollID uint) (map[uint]int64, error) // Returns OptionID -> Count of votes.
 }
 
-// GormPollRepository est une implémentation de PollRepository utilisant GORM.
+// GormPollRepository is an implementation of PollRepository that uses GORM.
 type GormPollRepository struct {
-	db *gorm.DB
+	db *gorm.DB // GORM database client.
 }
 
-// NewGormPollRepository crée une nouvelle instance de GormPollRepository.
+// NewGormPollRepository creates a new instance of GormPollRepository.
 func NewGormPollRepository(db *gorm.DB) *GormPollRepository {
 	return &GormPollRepository{db: db}
 }
 
-// CreatePoll crée un nouveau sondage avec ses options.
+// CreatePoll persists a new poll and its associated options to the database.
 func (r *GormPollRepository) CreatePoll(poll *models.Poll) error {
 	pollDB := toPollDB(poll)
 	if err := r.db.Create(&pollDB).Error; err != nil {
 		return err
 	}
-	*poll = *toPoll(pollDB)
+	*poll = *toPoll(pollDB) // Update the original poll with DB-generated fields (e.g., IDs for poll and options).
 	return nil
 }
 
-// FindPollByID recherche un sondage par son ID, avec ses options.
+// FindPollByID retrieves a poll by its ID, eagerly loading its options.
 func (r *GormPollRepository) FindPollByID(id uint) (*models.Poll, error) {
 	var pollDB PollDB
+	// Preload "Options" to fetch associated options in a single query.
 	result := r.db.Preload("Options").First(&pollDB, id)
 	if result.Error != nil {
 		return nil, result.Error
@@ -84,9 +89,10 @@ func (r *GormPollRepository) FindPollByID(id uint) (*models.Poll, error) {
 	return toPoll(&pollDB), nil
 }
 
-// FindPollsByUserID recherche tous les sondages créés par un utilisateur donné.
+// FindPollsByUserID retrieves all polls created by a specific user, eagerly loading their options.
 func (r *GormPollRepository) FindPollsByUserID(userID uint) ([]models.Poll, error) {
 	var pollsDB []PollDB
+	// Preload "Options" and filter by UserID.
 	if err := r.db.Preload("Options").Where("user_id = ?", userID).Find(&pollsDB).Error; err != nil {
 		return nil, err
 	}
@@ -97,9 +103,10 @@ func (r *GormPollRepository) FindPollsByUserID(userID uint) ([]models.Poll, erro
 	return polls, nil
 }
 
-// FindAllPolls recherche tous les sondages, avec leurs options.
+// FindAllPolls retrieves all polls, eagerly loading their options.
 func (r *GormPollRepository) FindAllPolls() ([]models.Poll, error) {
 	var pollsDB []PollDB
+	// Preload "Options" to fetch all polls with their associated options.
 	if err := r.db.Preload("Options").Find(&pollsDB).Error; err != nil {
 		return nil, err
 	}
@@ -110,29 +117,33 @@ func (r *GormPollRepository) FindAllPolls() ([]models.Poll, error) {
 	return polls, nil
 }
 
-// UpdatePoll met à jour un sondage existant et ses options.
+// UpdatePoll updates an existing poll and its options.
+// Note: GORM's Save method does not automatically update nested associations.
+// For complex updates involving options, manual handling or transactions might be needed.
 func (r *GormPollRepository) UpdatePoll(poll *models.Poll) error {
 	pollDB := toPollDB(poll)
-	// GORM ne met pas à jour les relations imbriquées par défaut avec Save.
-	// Il faut gérer les options séparément ou utiliser des transactions.
+	// GORM does not update nested relations by default with Save.
+	// Options need to be managed separately or within a transaction.
 	return r.db.Save(&pollDB).Error
 }
 
-// DeletePoll supprime un sondage par son ID, y compris ses options et votes associés.
+// DeletePoll deletes a poll by its ID, including its associated options and votes.
+// It performs cascading deletes for related records.
 func (r *GormPollRepository) DeletePoll(id uint) error {
-	// Supprimer les votes associés aux options du sondage
+	// Delete votes associated with the poll's options.
 	if err := r.db.Where("option_id IN (SELECT id FROM options WHERE poll_id = ?)", id).Delete(&VoteDB{}).Error; err != nil {
 		return err
 	}
-	// Supprimer les options du sondage
+	// Delete options belonging to the poll.
 	if err := r.db.Where("poll_id = ?", id).Delete(&OptionDB{}).Error; err != nil {
 		return err
 	}
-	// Supprimer le sondage lui-même
+	// Delete the poll itself.
 	return r.db.Delete(&PollDB{}, id).Error
 }
 
-// GetPollResults retourne les résultats d'un sondage (nombre de votes par option).
+// GetPollResults returns the vote counts for each option of a given poll.
+// The result is a map where keys are OptionIDs and values are vote counts.
 func (r *GormPollRepository) GetPollResults(pollID uint) (map[uint]int64, error) {
 	results := make(map[uint]int64)
 	var rawResults []struct {
@@ -140,17 +151,20 @@ func (r *GormPollRepository) GetPollResults(pollID uint) (map[uint]int64, error)
 		Count    int64
 	}
 
+	// Query to count votes for options belonging to the specified poll.
 	if err := r.db.Model(&VoteDB{}).Select("option_id, count(*) as count").Where("option_id IN (SELECT id FROM options WHERE poll_id = ?)", pollID).Group("option_id").Scan(&rawResults).Error; err != nil {
 		return nil, err
 	}
 
+	// Populate the results map.
 	for _, res := range rawResults {
 		results[res.OptionID] = res.Count
 	}
 	return results, nil
 }
 
-// toPollDB convertit un modèle de domaine Poll en un modèle de base de données PollDB.
+// toPollDB converts a domain Poll model to a database-specific PollDB model.
+// It also converts associated Option models to OptionDB models.
 func toPollDB(p *models.Poll) *PollDB {
 	pollDB := &PollDB{
 		Model:    gorm.Model{ID: p.ID, CreatedAt: p.CreatedAt, UpdatedAt: p.UpdatedAt, DeletedAt: p.DeletedAt},
@@ -163,7 +177,8 @@ func toPollDB(p *models.Poll) *PollDB {
 	return pollDB
 }
 
-// toPoll convertit un modèle de base de données PollDB en un modèle de domaine Poll.
+// toPoll converts a database-specific PollDB model back to a domain Poll model.
+// It also converts associated OptionDB models to Option models.
 func toPoll(pdb *PollDB) *models.Poll {
 	poll := &models.Poll{
 		Model:    gorm.Model{ID: pdb.ID, CreatedAt: pdb.CreatedAt, UpdatedAt: pdb.UpdatedAt, DeletedAt: pdb.DeletedAt},
@@ -176,7 +191,7 @@ func toPoll(pdb *PollDB) *models.Poll {
 	return poll
 }
 
-// toOptionDB convertit un modèle de domaine Option en un modèle de base de données OptionDB.
+// toOptionDB converts a domain Option model to a database-specific OptionDB model.
 func toOptionDB(o *models.Option) *OptionDB {
 	return &OptionDB{
 		Model:  gorm.Model{ID: o.ID, CreatedAt: o.CreatedAt, UpdatedAt: o.UpdatedAt, DeletedAt: o.DeletedAt},
@@ -185,7 +200,7 @@ func toOptionDB(o *models.Option) *OptionDB {
 	}
 }
 
-// toOption convertit un modèle de base de données OptionDB en un modèle de domaine Option.
+// toOption converts a database-specific OptionDB model back to a domain Option model.
 func toOption(odb *OptionDB) *models.Option {
 	return &models.Option{
 		Model:  gorm.Model{ID: odb.ID, CreatedAt: odb.CreatedAt, UpdatedAt: odb.UpdatedAt, DeletedAt: odb.DeletedAt},
@@ -194,44 +209,46 @@ func toOption(odb *OptionDB) *models.Option {
 	}
 }
 
-// VoteRepository définit l'interface pour les opérations de persistance des votes.
+// VoteRepository defines the interface for vote persistence operations.
+// It abstracts the underlying database implementation for votes.
 type VoteRepository interface {
 	CreateVote(vote *models.Vote) error
 	HasUserVoted(userID, pollID uint) (bool, error)
 	GetVotesByOptionID(optionID uint) ([]models.Vote, error)
 }
 
-// GormVoteRepository est une implémentation de VoteRepository utilisant GORM.
+// GormVoteRepository is an implementation of VoteRepository that uses GORM.
 type GormVoteRepository struct {
-	db *gorm.DB
+	db *gorm.DB // GORM database client.
 }
 
-// NewGormVoteRepository crée une nouvelle instance de GormVoteRepository.
+// NewGormVoteRepository creates a new instance of GormVoteRepository.
 func NewGormVoteRepository(db *gorm.DB) *GormVoteRepository {
 	return &GormVoteRepository{db: db}
 }
 
-// CreateVote crée un nouveau vote.
+// CreateVote persists a new vote to the database.
 func (r *GormVoteRepository) CreateVote(vote *models.Vote) error {
 	voteDB := toVoteDB(vote)
 	if err := r.db.Create(&voteDB).Error; err != nil {
 		return err
 	}
-	*vote = *toVote(voteDB)
+	*vote = *toVote(voteDB) // Update the original vote with DB-generated fields.
 	return nil
 }
 
-// HasUserVoted vérifie si un utilisateur a déjà voté pour un sondage donné.
+// HasUserVoted checks if a user has already voted in a given poll.
+// It queries for votes cast by the user for any option belonging to the specified poll.
 func (r *GormVoteRepository) HasUserVoted(userID, pollID uint) (bool, error) {
 	var count int64
-	// Compte les votes de l'utilisateur pour les options appartenant à ce sondage
+	// Count votes by the user for options within the specified poll.
 	if err := r.db.Model(&VoteDB{}).Where("user_id = ? AND option_id IN (SELECT id FROM options WHERE poll_id = ?)", userID, pollID).Count(&count).Error; err != nil {
 		return false, err
 	}
 	return count > 0, nil
 }
 
-// GetVotesByOptionID récupère tous les votes pour une option donnée.
+// GetVotesByOptionID retrieves all votes for a specific option.
 func (r *GormVoteRepository) GetVotesByOptionID(optionID uint) ([]models.Vote, error) {
 	var votesDB []VoteDB
 	if err := r.db.Where("option_id = ?", optionID).Find(&votesDB).Error; err != nil {
@@ -244,7 +261,7 @@ func (r *GormVoteRepository) GetVotesByOptionID(optionID uint) ([]models.Vote, e
 	return votes, nil
 }
 
-// toVoteDB convertit un modèle de domaine Vote en un modèle de base de données VoteDB.
+// toVoteDB converts a domain Vote model to a database-specific VoteDB model.
 func toVoteDB(v *models.Vote) *VoteDB {
 	return &VoteDB{
 		Model:    gorm.Model{ID: v.ID, CreatedAt: v.CreatedAt, UpdatedAt: v.UpdatedAt, DeletedAt: v.DeletedAt},
@@ -253,7 +270,7 @@ func toVoteDB(v *models.Vote) *VoteDB {
 	}
 }
 
-// toVote convertit un modèle de base de données VoteDB en un modèle de domaine Vote.
+// toVote converts a database-specific VoteDB model back to a domain Vote model.
 func toVote(vdb *VoteDB) *models.Vote {
 	return &models.Vote{
 		Model:    gorm.Model{ID: vdb.ID, CreatedAt: vdb.CreatedAt, UpdatedAt: vdb.UpdatedAt, DeletedAt: vdb.DeletedAt},

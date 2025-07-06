@@ -2,24 +2,26 @@ package services
 
 import (
 	"fmt"
-	"log"
 	"strings"
 
 	"github.com/JneiraS/BaseSasS/internal/domain/models"
 	"github.com/JneiraS/BaseSasS/internal/domain/repositories"
 )
 
-// EventService encapsule la logique métier pour la gestion des événements.
+// EventService encapsulates the business logic for managing events.
+// It interacts with the EventRepository to perform CRUD operations and other event-related tasks.
 type EventService struct {
 	eventRepo repositories.EventRepository
 }
 
-// NewEventService crée une nouvelle instance de EventService.
+// NewEventService creates a new instance of EventService.
+// It takes an EventRepository as a dependency, adhering to the dependency inversion principle.
 func NewEventService(eventRepo repositories.EventRepository) *EventService {
 	return &EventService{eventRepo: eventRepo}
 }
 
-// CreateEvent gère la création d'un nouvel événement.
+// CreateEvent handles the creation of a new event.
+// It performs validation on the event data before persisting it via the repository.
 func (s *EventService) CreateEvent(event *models.Event) error {
 	if err := s.validateEvent(event); err != nil {
 		return err
@@ -27,17 +29,18 @@ func (s *EventService) CreateEvent(event *models.Event) error {
 	return s.eventRepo.CreateEvent(event)
 }
 
-// GetEventByID récupère un événement par son ID.
+// GetEventByID retrieves an event by its unique identifier.
 func (s *EventService) GetEventByID(id uint) (*models.Event, error) {
 	return s.eventRepo.FindEventByID(id)
 }
 
-// GetEventsByUserID récupère tous les événements d'un utilisateur.
+// GetEventsByUserID retrieves all events associated with a specific user ID.
 func (s *EventService) GetEventsByUserID(userID uint) ([]models.Event, error) {
 	return s.eventRepo.FindEventsByUserID(userID)
 }
 
-// UpdateEvent gère la mise à jour d'un événement.
+// UpdateEvent handles the update of an existing event.
+// It performs validation on the updated event data before persisting the changes.
 func (s *EventService) UpdateEvent(event *models.Event) error {
 	if err := s.validateEvent(event); err != nil {
 		return err
@@ -45,24 +48,18 @@ func (s *EventService) UpdateEvent(event *models.Event) error {
 	return s.eventRepo.UpdateEvent(event)
 }
 
-// DeleteEvent gère la suppression d'un événement.
+// DeleteEvent handles the deletion of an event by its unique identifier.
 func (s *EventService) DeleteEvent(id uint) error {
 	return s.eventRepo.DeleteEvent(id)
 }
 
-// GetTotalEventsCount retourne le nombre total d'événements pour un utilisateur donné.
+// GetTotalEventsCount returns the total number of events for a given user ID.
 func (s *EventService) GetTotalEventsCount(userID uint) (int64, error) {
-	log.Printf("Attempting to get total events count for user ID: %d", userID)
-	count, err := s.eventRepo.GetTotalEventsCount(userID)
-	if err != nil {
-		log.Printf("Error from event repository GetTotalEventsCount for user %d: %v", userID, err)
-		return 0, err
-	}
-	log.Printf("Successfully retrieved total events count for user %d: %d", userID, count)
-	return count, nil
+	return s.eventRepo.GetTotalEventsCount(userID)
 }
 
-// validateEvent valide les données d'un événement.
+// validateEvent performs business logic validation on an Event model.
+// It checks for required fields and logical consistency (e.g., start date before end date).
 func (s *EventService) validateEvent(event *models.Event) error {
 	event.Title = strings.TrimSpace(event.Title)
 	event.Description = strings.TrimSpace(event.Description)

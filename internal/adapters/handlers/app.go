@@ -2,7 +2,7 @@ package handlers
 
 import (
 	"context"
-	"encoding/json" // Ajoutez cette ligne
+	"encoding/json"
 	"fmt"
 	"html/template"
 	"log"
@@ -23,7 +23,9 @@ import (
 	"gorm.io/gorm"
 )
 
-// App encapsule les dépendances de l'application.
+// App encapsulates all application dependencies and configurations.
+// It holds references to various services, handlers, the database connection,
+// the Gin router, and application-wide configuration.
 type App struct {
 	authService           *services.AuthService
 	authHandlers          *AuthHandlers
@@ -47,16 +49,20 @@ type App struct {
 	userRepo              repositories.UserRepository
 }
 
-// NewApp crée et initialise une nouvelle instance de l'application.
+// NewApp creates and initializes a new instance of the application.
+// It loads configuration, initializes the database, sets up all services and handlers,
+// and configures the Gin router with middleware and routes.
 func NewApp() (*App, error) {
 	app := &App{}
 
+	// Load application configuration from environment variables or .env file.
 	cfg, err := config.LoadConfig()
 	if err != nil {
 		return nil, fmt.Errorf("failed to load configuration: %w", err)
 	}
 	app.cfg = cfg
 
+	// Initialize the database connection.
 	db, err := database.InitDatabase()
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize database: %w", err)
@@ -64,41 +70,47 @@ func NewApp() (*App, error) {
 	app.db = db
 	log.Println("Database connection established.")
 
+	// Initialize repositories (data access layer).
 	app.userRepo = repositories.NewGormUserRepository(app.db)
-	memberRepo := repositories.NewGormMemberRepository(app.db) // Créez le repo de membres
+	memberRepo := repositories.NewGormMemberRepository(app.db)
+	eventRepo := repositories.NewGormEventRepository(app.db)
+	transactionRepo := repositories.NewGormTransactionRepository(app.db)
+	documentRepo := repositories.NewGormDocumentRepository(app.db)
+	pollRepo := repositories.NewGormPollRepository(app.db)
+	voteRepo := repositories.NewGormVoteRepository(app.db)
 
+	// Initialize services (business logic layer).
 	app.profileService = services.NewProfileService(app.userRepo)
-	app.memberService = services.NewMemberService(memberRepo)                // Initialisez le service de membres
-	eventRepo := repositories.NewGormEventRepository(app.db)                 // Créez le repo d'événements
-	app.eventService = services.NewEventService(eventRepo)                   // Initialisez le service d'événements
-	app.emailService = services.NewEmailService(app.cfg)                     // Initialisez le service d'e-mail
-	transactionRepo := repositories.NewGormTransactionRepository(app.db)     // Créez le repo de transactions
-	app.financeService = services.NewFinanceService(transactionRepo)         // Initialisez le service financier
-	documentRepo := repositories.NewGormDocumentRepository(app.db)           // Créez le repo de documents
-	app.documentService = services.NewDocumentService(documentRepo, app.cfg) // Initialisez le service de documents
-	pollRepo := repositories.NewGormPollRepository(app.db)                   // Créez le repo de sondages
-	voteRepo := repositories.NewGormVoteRepository(app.db)                   // Créez le repo de votes
-	app.pollService = services.NewPollService(pollRepo, voteRepo)            // Initialisez le service de sondages
+	app.memberService = services.NewMemberService(memberRepo)
+	app.eventService = services.NewEventService(eventRepo)
+	app.emailService = services.NewEmailService(app.cfg)
+	app.financeService = services.NewFinanceService(transactionRepo)
+	app.documentService = services.NewDocumentService(documentRepo, app.cfg)
+	app.pollService = services.NewPollService(pollRepo, voteRepo)
 
-	// L'authentification est optionnelle, le serveur peut démarrer sans.
+	// Initialize OIDC provider for authentication. This is optional;
+	// the server can start without it if OIDC configuration is missing.
 	if err := app.initOIDCProvider(); err != nil {
-		log.Printf("AVERTISSEMENT: Authentification indisponible: %v", err)
+		log.Printf("WARNING: Authentication unavailable: %v", err)
 	}
 
+	// Auto-migrate database schemas for all models.
 	if err := app.db.AutoMigrate(&repositories.UserDB{}, &repositories.MemberDB{}, &repositories.EventDB{}, &repositories.TransactionDB{}, &repositories.DocumentDB{}); err != nil {
 		return nil, fmt.Errorf("failed to migrate database: %w", err)
 	}
 	log.Println("Database migration completed.")
 
+	// Initialize handlers (API/UI layer), injecting their respective services.
 	app.authHandlers = NewAuthHandlers(app.authService, app.cfg)
-	app.memberHandlers = NewMemberHandlers(app.memberService)                                                                    // Initialisez les handlers de membres
-	app.eventHandlers = NewEventHandlers(app.eventService)                                                                       // Initialisez les handlers d'événements
-	app.communicationHandlers = NewCommunicationHandlers(app.emailService, app.memberService)                                    // Initialisez les handlers de communication
-	app.financeHandlers = NewFinanceHandlers(app.financeService)                                                                 // Initialisez les handlers financiers
-	app.documentHandlers = NewDocumentHandlers(app.documentService)                                                              // Initialisez les handlers de documents
-	app.statisticsHandlers = NewStatisticsHandlers(app.memberService, app.financeService, app.eventService, app.documentService) // Initialisez les handlers de statistiques
-	app.pollHandlers = NewPollHandlers(app.pollService)                                                                          // Initialisez les handlers de sondages
+	app.memberHandlers = NewMemberHandlers(app.memberService)
+	app.eventHandlers = NewEventHandlers(app.eventService)
+	app.communicationHandlers = NewCommunicationHandlers(app.emailService, app.memberService)
+	app.financeHandlers = NewFinanceHandlers(app.financeService)
+	app.documentHandlers = NewDocumentHandlers(app.documentService)
+	app.statisticsHandlers = NewStatisticsHandlers(app.memberService, app.financeService, app.eventService, app.documentService)
+	app.pollHandlers = NewPollHandlers(app.pollService)
 
+	// Set up the Gin server and define all application routes.
 	router := app.setupServer()
 	app.setupRoutes(router)
 	app.router = router
@@ -106,15 +118,16 @@ func NewApp() (*App, error) {
 	return app, nil
 }
 
-// Run démarre le serveur de l'application.
+// Run starts the application's HTTP server.
 func (app *App) Run() {
-	log.Println("🚀 Serveur démarré sur :3000")
+	log.Println("🚀 Server started on :3000")
 	if err := app.router.Run(":3000"); err != nil {
 		log.Fatalf("Failed to run server: %v", err)
 	}
 }
 
-// initOIDCProvider configure le fournisseur OpenID Connect (OIDC).
+// initOIDCProvider configures the OpenID Connect (OIDC) provider.
+// It sets up the OIDC client and the OAuth2 configuration for authentication flows.
 func (app *App) initOIDCProvider() error {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
@@ -137,12 +150,15 @@ func (app *App) initOIDCProvider() error {
 	return nil
 }
 
-// setupServer configure et retourne une instance du serveur Gin.
+// setupServer configures and returns a Gin engine instance with global middleware.
+// This includes security headers, session management, CSRF protection, and context injection.
 func (app *App) setupServer() *gin.Engine {
 	r := gin.Default()
 
+	// Apply security headers to all responses.
 	r.Use(middleware.SecurityHeaders(app.cfg))
 
+	// Configure and apply cookie-based session management.
 	secretKey := []byte(app.cfg.SessionSecret)
 	store := cookie.NewStore(secretKey)
 	store.Options(sessions.Options{
@@ -152,12 +168,17 @@ func (app *App) setupServer() *gin.Engine {
 		Secure:   app.cfg.SessionSecure,
 		SameSite: app.cfg.SessionSameSiteMode(),
 	})
-
 	r.Use(sessions.Sessions(app.cfg.CookieName, store))
+
+	// Apply CSRF protection middleware.
 	r.Use(middleware.CSRFProtection(app.cfg))
+
+	// Inject common context variables into Gin's context.
 	r.Use(middleware.ContextInjector())
 
-	// Permet d'utiliser `{{ safe .variable }}` dans les templates pour afficher du HTML.
+	// Set up custom template functions for HTML rendering.
+	// These functions provide utilities like safe HTML rendering, arithmetic operations,
+	// percentage calculations, and JSON marshaling for templates.
 	r.SetFuncMap(template.FuncMap{
 		"safe": func(s any) template.HTML {
 			switch v := s.(type) {
@@ -212,19 +233,26 @@ func (app *App) setupServer() *gin.Engine {
 		},
 	})
 
+	// Load HTML templates from the "templates" directory.
 	r.LoadHTMLGlob("templates/*")
+	// Serve static files from the "static" directory.
 	r.Static("/static", "./static")
 	return r
 }
 
-// setupRoutes définit toutes les routes de l'application.
+// setupRoutes defines all application routes and assigns them to their respective handlers.
+// Routes are grouped by functionality (e.g., members, events, finance) and protected
+// by the authRequired middleware where necessary.
 func (app *App) setupRoutes(r *gin.Engine) {
+	// Public routes
 	r.GET("/", app.LandingPage)
-	r.GET("/home", HomeHandler)
+	r.GET("/home", HomeHandler) // Connected home page
+
+	// Profile management routes (authentication required)
 	r.GET("/profile", app.authRequired(), app.ProfileHandler)
 	r.POST("/profile/update", app.authRequired(), app.UpdateProfileHandler)
 
-	// Routes pour la gestion des membres
+	// Member management routes (authentication required)
 	r.GET("/members", app.authRequired(), app.memberHandlers.ListMembers)
 	r.GET("/members/new", app.authRequired(), app.memberHandlers.ShowCreateMemberForm)
 	r.POST("/members/new", app.authRequired(), app.memberHandlers.CreateMember)
@@ -233,7 +261,7 @@ func (app *App) setupRoutes(r *gin.Engine) {
 	r.POST("/members/delete/:id", app.authRequired(), app.memberHandlers.DeleteMember)
 	r.POST("/members/mark-payment/:id", app.authRequired(), app.memberHandlers.MarkPayment)
 
-	// Routes pour la gestion des événements
+	// Event management routes (authentication required)
 	r.GET("/events", app.authRequired(), app.eventHandlers.ListEvents)
 	r.GET("/events/new", app.authRequired(), app.eventHandlers.ShowCreateEventForm)
 	r.POST("/events/new", app.authRequired(), app.eventHandlers.CreateEvent)
@@ -241,11 +269,11 @@ func (app *App) setupRoutes(r *gin.Engine) {
 	r.POST("/events/edit/:id", app.authRequired(), app.eventHandlers.UpdateEvent)
 	r.POST("/events/delete/:id", app.authRequired(), app.eventHandlers.DeleteEvent)
 
-	// Routes pour la communication
+	// Communication routes (authentication required)
 	r.GET("/communication/email", app.authRequired(), app.communicationHandlers.ShowEmailForm)
 	r.POST("/communication/email", app.authRequired(), app.communicationHandlers.SendEmailToMembers)
 
-	// Routes pour la gestion financière
+	// Financial management routes (authentication required)
 	r.GET("/finance/transactions", app.authRequired(), app.financeHandlers.ListTransactions)
 	r.GET("/finance/transactions/new", app.authRequired(), app.financeHandlers.ShowCreateTransactionForm)
 	r.POST("/finance/transactions/new", app.authRequired(), app.financeHandlers.CreateTransaction)
@@ -253,14 +281,14 @@ func (app *App) setupRoutes(r *gin.Engine) {
 	r.POST("/finance/transactions/edit/:id", app.authRequired(), app.financeHandlers.UpdateTransaction)
 	r.POST("/finance/transactions/delete/:id", app.authRequired(), app.financeHandlers.DeleteTransaction)
 
-	// Routes pour la gestion des documents
+	// Document management routes (authentication required)
 	r.GET("/documents", app.authRequired(), app.documentHandlers.ListDocuments)
 	r.GET("/documents/upload", app.authRequired(), app.documentHandlers.ShowUploadForm)
 	r.POST("/documents/upload", app.authRequired(), app.documentHandlers.UploadDocument)
 	r.GET("/documents/download/:id", app.authRequired(), app.documentHandlers.DownloadDocument)
 	r.POST("/documents/delete/:id", app.authRequired(), app.documentHandlers.DeleteDocument)
 
-	// Routes pour les sondages
+	// Poll management routes (authentication required)
 	r.GET("/polls", app.authRequired(), app.pollHandlers.ListPolls)
 	r.GET("/polls/new", app.authRequired(), app.pollHandlers.ShowCreatePollForm)
 	r.POST("/polls/new", app.authRequired(), app.pollHandlers.CreatePoll)
@@ -268,22 +296,22 @@ func (app *App) setupRoutes(r *gin.Engine) {
 	r.POST("/polls/:id/vote", app.authRequired(), app.pollHandlers.VoteOnPoll)
 	r.POST("/polls/delete/:id", app.authRequired(), app.pollHandlers.DeletePoll)
 
-	// Routes pour les statistiques (API)
+	// Statistics API routes (authentication required)
 	r.GET("/api/stats/members", app.authRequired(), app.statisticsHandlers.GetMemberStats)
 	r.GET("/api/stats/finance", app.authRequired(), app.statisticsHandlers.GetFinanceStats)
-	r.GET("/api/stats/events", app.authRequired(), app.statisticsHandlers.GetEventStats)
 	r.GET("/api/stats/documents", app.authRequired(), app.statisticsHandlers.GetDocumentStats)
 
-	// Route pour le tableau de bord
+	// Dashboard route (authentication required)
 	r.GET("/dashboard", app.authRequired(), app.statisticsHandlers.ShowDashboard)
 
-	// Les routes d'authentification ne sont actives que si le service OIDC est configuré.
+	// Authentication routes (active only if OIDC service is configured)
 	if app.authService != nil {
 		r.GET("/login", middleware.AuthConfigured(app.authService), app.authHandlers.LoginHandler)
 		r.POST("/logout", middleware.AuthConfigured(app.authService), app.authHandlers.LogoutHandler)
 		r.GET("//callback", middleware.AuthConfigured(app.authService), app.authHandlers.CallbackHandler)
 	}
 
+	// Health check endpoint for monitoring.
 	r.GET("/health", func(c *gin.Context) {
 		status := gin.H{
 			"server":       "running",
@@ -292,14 +320,15 @@ func (app *App) setupRoutes(r *gin.Engine) {
 		c.JSON(http.StatusOK, status)
 	})
 
-	// Ajoute le jeton CSRF au contexte pour qu'il soit disponible dans les templates.
+	// Middleware to inject CSRF token into the template context for all requests.
 	r.Use(func(c *gin.Context) {
 		c.Set("csrf_token", csrf.GetToken(c))
 		c.Next()
 	})
 }
 
-// authRequired est un middleware qui vérifie si un utilisateur est authentifié.
+// authRequired is a middleware that checks if a user is authenticated.
+// If no user is found in the session, it redirects to the login page.
 func (app *App) authRequired() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		session := sessions.Default(c)
@@ -308,10 +337,10 @@ func (app *App) authRequired() gin.HandlerFunc {
 		if user == nil {
 			log.Printf("AuthRequired: User not found in session. Redirecting to /login. Request path: %s", c.Request.URL.Path)
 			c.Redirect(http.StatusFound, "/login")
-			c.Abort()
+			c.Abort() // Abort the request chain
 			return
 		}
 		log.Printf("AuthRequired: User %v found in session. Request path: %s", user, c.Request.URL.Path)
-		c.Next()
+		c.Next() // Proceed to the next handler in the chain
 	}
 }
