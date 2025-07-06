@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Erreur</title>
+    <link rel="stylesheet" href="/static/css/main.css">
+    <link rel="stylesheet" href="/static/css/fontawesome/fontawesome-free-6.5.1-web/css/all.min.css">
+</head>
+<body>
+    {{.navbar|safe}}
+
+    <div class="container" style="text-align: center; padding-top: 50px;">
+        <h1>Une erreur est survenue</h1>
+        <p>{{.error}}</p>
+        <a href="/" class="btn btn-primary" style="margin-top: 20px;">Retour à l'accueil</a>
+    </div>
+
+    <script src="/static/js/theme.js"></script>
+</body>
+</html>

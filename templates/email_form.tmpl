@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{{.title}}</title>
+    <link rel="stylesheet" href="/static/css/main.css">
+    <link rel="stylesheet" href="/static/css/pages.css">
+    <link rel="stylesheet" href="/static/css/fontawesome/fontawesome-free-6.5.1-web/css/all.min.css">
+</head>
+<body>
+    {{.navbar|safe}}
+
+    <form action="/communication/email" method="POST" class="form-container">
+        <h2>{{.title}}</h2>
+        <input type="hidden" name="_csrf" value="{{.csrf_token}}">
+
+        {{if .message}}
+            <p style="color: green; text-align: center; margin-bottom: 20px;">{{.message}}</p>
+        {{end}}
+        {{if .error}}
+            <p style="color: red; text-align: center; margin-bottom: 20px;">{{.error}}</p>
+        {{end}}
+
+        <div class="form-group">
+            <label for="subject" class="form-label">Sujet:</label>
+            <input type="text" id="subject" name="subject" required class="form-control">
+        </div>
+        <div class="form-group">
+            <label for="body" class="form-label">Message:</label>
+            <textarea id="body" name="body" rows="10" required class="form-control"></textarea>
+        </div>
+
+        <button type="submit" class="form-submit-btn">Envoyer l'e-mail</button>
+    </form>
+
+    <script src="/static/js/theme.js"></script>
+</body>
+</html>

@@ -29,7 +29,6 @@ func NewAuthHandlers(authService *services.AuthService, cfg *config.Config) *Aut
 }
 
 func (h *AuthHandlers) LoginHandler(c *gin.Context) {
-	
 
 	session := c.MustGet("session").(sessions.Session)
 
