@@ -21,28 +21,13 @@ func (app *App) ProfileHandler(c *gin.Context) {
 		return
 	}
 	csrfToken := c.MustGet("csrf_token").(string)
-
-	// Récupérer les messages flash
-	warningFlashes := session.Flashes("warning")
-	errorFlashes := session.Flashes("error")
-	successFlashes := session.Flashes("success")
-
-	// Navbar
 	navbar := components.NavBar(user, csrfToken, session)
-
-	// Sauvegarder la session pour supprimer les messages flash après les avoir lus
-	if err := session.Save(); err != nil {
-		log.Printf("ERREUR: Erreur lors de la sauvegarde de la session après lecture des flashs: %v", err)
-	}
 
 	c.HTML(http.StatusOK, "profile.tmpl", gin.H{
 		"title":      "Profil",
 		"user":       user,
 		"navbar":     navbar,
 		"csrf_token": csrfToken,
-		"warnings":   warningFlashes,
-		"errors":     errorFlashes,
-		"successes":  successFlashes,
 	})
 }
 
