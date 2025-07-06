@@ -16,7 +16,7 @@ func HomeHandler(c *gin.Context) {
 	csrfToken := c.MustGet("csrf_token").(string)
 	conn_button := elements.Button("Connexion", "btn btn-primary", "/login")
 	logout_button := elements.Button("Déconnexion", "btn btn-primary", "/logout")
-	navbar := components.NavBar(user, csrfToken)
+	navbar := components.NavBar(user, csrfToken, session)
 
 	c.HTML(http.StatusOK, "index.tmpl", gin.H{
 		"title":            "Accueil",

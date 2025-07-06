@@ -38,7 +38,7 @@ func (h *FinanceHandlers) ListTransactions(c *gin.Context) {
 	}
 
 	csrfToken := c.MustGet("csrf_token").(string)
-	navbar := components.NavBar(user, csrfToken)
+	navbar := components.NavBar(user, csrfToken, session)
 
 	c.HTML(http.StatusOK, "transactions.tmpl", gin.H{
 		"title":        "Mes Transactions",
@@ -59,13 +59,13 @@ func (h *FinanceHandlers) ShowCreateTransactionForm(c *gin.Context) {
 	}
 
 	csrfToken := c.MustGet("csrf_token").(string)
-	navbar := components.NavBar(user, csrfToken)
+	navbar := components.NavBar(user, csrfToken, session)
 
 	c.HTML(http.StatusOK, "transaction_form.tmpl", gin.H{
-		"title":      "Ajouter une nouvelle transaction",
-		"navbar":     navbar,
-		"user":       user,
-		"csrf_token": csrfToken,
+		"title":       "Ajouter une nouvelle transaction",
+		"navbar":      navbar,
+		"user":        user,
+		"csrf_token":  csrfToken,
 		"transaction": models.Transaction{Date: time.Now()}, // Valeurs par défaut
 	})
 }
@@ -123,13 +123,13 @@ func (h *FinanceHandlers) ShowEditTransactionForm(c *gin.Context) {
 	}
 
 	csrfToken := c.MustGet("csrf_token").(string)
-	navbar := components.NavBar(user, csrfToken)
+	navbar := components.NavBar(user, csrfToken, session)
 
 	c.HTML(http.StatusOK, "transaction_form.tmpl", gin.H{
-		"title":      "Modifier la transaction",
-		"navbar":     navbar,
-		"user":       user,
-		"csrf_token": csrfToken,
+		"title":       "Modifier la transaction",
+		"navbar":      navbar,
+		"user":        user,
+		"csrf_token":  csrfToken,
 		"transaction": transaction,
 	})
 }

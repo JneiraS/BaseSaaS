@@ -36,7 +36,7 @@ func (h *CommunicationHandlers) ShowEmailForm(c *gin.Context) {
 	}
 
 	csrfToken := c.MustGet("csrf_token").(string)
-	navbar := components.NavBar(user, csrfToken)
+	navbar := components.NavBar(user, csrfToken, session)
 
 	c.HTML(http.StatusOK, "email_form.tmpl", gin.H{
 		"title":      "Envoyer un e-mail aux membres",

@@ -11,8 +11,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-
-
 // Page profil (protégée)
 func (app *App) ProfileHandler(c *gin.Context) {
 	session := c.MustGet("session").(sessions.Session)
@@ -23,12 +21,14 @@ func (app *App) ProfileHandler(c *gin.Context) {
 		return
 	}
 	csrfToken := c.MustGet("csrf_token").(string)
-	navbar := components.NavBar(user, csrfToken)
 
 	// Récupérer les messages flash
 	warningFlashes := session.Flashes("warning")
 	errorFlashes := session.Flashes("error")
 	successFlashes := session.Flashes("success")
+
+	// Navbar
+	navbar := components.NavBar(user, csrfToken, session)
 
 	// Sauvegarder la session pour supprimer les messages flash après les avoir lus
 	if err := session.Save(); err != nil {

@@ -42,7 +42,7 @@ func (h *EventHandlers) ListEvents(c *gin.Context) {
 
 	// Récupérer le jeton CSRF pour la navbar
 	csrfToken := c.MustGet("csrf_token").(string)
-	navbar := components.NavBar(user, csrfToken)
+	navbar := components.NavBar(user, csrfToken, session)
 
 	c.HTML(http.StatusOK, "events.tmpl", gin.H{
 		"title":      "Mes Événements",
@@ -63,7 +63,7 @@ func (h *EventHandlers) ShowCreateEventForm(c *gin.Context) {
 	}
 
 	csrfToken := c.MustGet("csrf_token").(string)
-	navbar := components.NavBar(user, csrfToken)
+	navbar := components.NavBar(user, csrfToken, session)
 
 	c.HTML(http.StatusOK, "event_form.tmpl", gin.H{
 		"title":      "Créer un nouvel événement",
@@ -127,7 +127,7 @@ func (h *EventHandlers) ShowEditEventForm(c *gin.Context) {
 	}
 
 	csrfToken := c.MustGet("csrf_token").(string)
-	navbar := components.NavBar(user, csrfToken)
+	navbar := components.NavBar(user, csrfToken, session)
 
 	c.HTML(http.StatusOK, "event_form.tmpl", gin.H{
 		"title":      "Modifier l'événement",

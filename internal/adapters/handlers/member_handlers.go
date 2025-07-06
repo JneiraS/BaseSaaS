@@ -42,7 +42,7 @@ func (h *MemberHandlers) ListMembers(c *gin.Context) {
 
 	// Récupérer le jeton CSRF pour la navbar
 	csrfToken := c.MustGet("csrf_token").(string)
-	navbar := components.NavBar(user, csrfToken)
+	navbar := components.NavBar(user, csrfToken, session)
 
 	c.HTML(http.StatusOK, "members.tmpl", gin.H{
 		"title":      "Mes Membres",
@@ -63,7 +63,7 @@ func (h *MemberHandlers) ShowCreateMemberForm(c *gin.Context) {
 	}
 
 	csrfToken := c.MustGet("csrf_token").(string)
-	navbar := components.NavBar(user, csrfToken)
+	navbar := components.NavBar(user, csrfToken, session)
 
 	c.HTML(http.StatusOK, "member_form.tmpl", gin.H{
 		"title":      "Ajouter un nouveau membre",
@@ -123,7 +123,7 @@ func (h *MemberHandlers) ShowEditMemberForm(c *gin.Context) {
 	member, err := h.memberService.GetMemberByID(uint(memberID))
 	if err != nil {
 		c.HTML(http.StatusNotFound, "error.tmpl", gin.H{"error": "Membre non trouvé"})
-		return	
+		return
 	}
 
 	// Vérifier que le membre appartient bien à l'utilisateur connecté
@@ -133,7 +133,7 @@ func (h *MemberHandlers) ShowEditMemberForm(c *gin.Context) {
 	}
 
 	csrfToken := c.MustGet("csrf_token").(string)
-	navbar := components.NavBar(user, csrfToken)
+	navbar := components.NavBar(user, csrfToken, session)
 
 	c.HTML(http.StatusOK, "member_form.tmpl", gin.H{
 		"title":      "Modifier le membre",

@@ -2,11 +2,12 @@ package components
 
 import (
 	"github.com/JneiraS/BaseSasS/components/elements"
+	"github.com/gin-contrib/sessions"
 	gom "maragu.dev/gomponents"
 	gomh "maragu.dev/gomponents/html"
 )
 
-func NavBar(user any, csrfToken string) gom.Node {
+func NavBar(user any, csrfToken string, session sessions.Session) gom.Node {
 	logoElement := gomh.A(
 		gomh.Class("navbar-brand"),
 		gom.Text("🚀"),
@@ -20,7 +21,6 @@ func NavBar(user any, csrfToken string) gom.Node {
 			gomh.Class("navbar"),
 			logoElement,
 			gomh.Div(
-
 				gomh.Class("ctn-btn"),
 				containerButton(),
 				logoutForm(csrfToken),
@@ -32,6 +32,7 @@ func NavBar(user any, csrfToken string) gom.Node {
 		gomh.Class("navbar"),
 		logoElement,
 		gomh.Div(
+			FlashMessages(session),
 			gomh.Class("ctn-btn"),
 			elements.Button("Connexion", "btn", "/login"),
 			themeSwitcher,
@@ -59,6 +60,35 @@ func containerButton() gom.Node {
 			gomh.A(gom.Text("Finance"), gom.Attr("href", "/finance/transactions")),
 			gomh.A(gom.Text("Mes favoris"), gom.Attr("href", "/favoris")),
 			gomh.A(gom.Text("Mes commandes"), gom.Attr("href", "/commandes")),
+		),
+	)
+}
+func FlashMessages(session sessions.Session) gom.Node {
+	return gomh.Div(
+		gomh.Class("flash-message-container"),
+		gom.Group(
+			gom.Map(session.Flashes("success"), func(success interface{}) gom.Node {
+				return gomh.Div(
+					gomh.Class("flash-message success"),
+					gom.Text(success.(string)),
+				)
+			}),
+		),
+		gom.Group(
+			gom.Map(session.Flashes("error"), func(err interface{}) gom.Node {
+				return gomh.Div(
+					gomh.Class("flash-message error"),
+					gom.Text(err.(string)),
+				)
+			}),
+		),
+		gom.Group(
+			gom.Map(session.Flashes("warning"), func(warning interface{}) gom.Node {
+				return gomh.Div(
+					gomh.Class("flash-message warning"),
+					gom.Text(warning.(string)),
+				)
+			}),
 		),
 	)
 }
