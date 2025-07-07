@@ -53,8 +53,8 @@ func LoadConfig() (*Config, error) {
 		SessionSecret:         os.Getenv("SESSION_SECRET"),
 		SessionMaxAge:         getEnvAsInt("SESSION_MAX_AGE", 86400),    // 24 hours
 		SessionHttpOnly:       getEnvAsBool("SESSION_HTTP_ONLY", false), // true in production
-		SessionSecure:         getEnvAsBool("SESSION_SECURE", false),    // true in production
-		SessionSameSite:       getEnv("SESSION_SAMESITE", "Lax"),
+		SessionSecure:         false,    // false car nous sommes en HTTP sur localhost
+		SessionSameSite:       "Lax",    // Lax est la valeur par défaut et fonctionne bien pour les requêtes same-site
 		AppURL:                getEnv("APP_URL", "http://localhost:3000"),
 		CookieName:            getEnv("COOKIE_NAME", "mysession"),
 		CSRFSecret:            os.Getenv("CSRF_SECRET"),

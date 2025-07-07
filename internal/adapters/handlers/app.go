@@ -300,6 +300,7 @@ func (app *App) setupRoutes(r *gin.Engine) {
 	r.GET("/api/stats/members", app.authRequired(), app.statisticsHandlers.GetMemberStats)
 	r.GET("/api/stats/finance", app.authRequired(), app.statisticsHandlers.GetFinanceStats)
 	r.GET("/api/stats/documents", app.authRequired(), app.statisticsHandlers.GetDocumentStats)
+	r.GET("/api/stats/events", app.authRequired(), app.statisticsHandlers.GetEventStats)
 
 	// Dashboard route (authentication required)
 	r.GET("/dashboard", app.authRequired(), app.statisticsHandlers.ShowDashboard)
@@ -331,6 +332,11 @@ func (app *App) setupRoutes(r *gin.Engine) {
 // If no user is found in the session, it redirects to the login page.
 func (app *App) authRequired() gin.HandlerFunc {
 	return func(c *gin.Context) {
+		// Log all incoming cookies for debugging
+		for _, cookie := range c.Request.Cookies() {
+			log.Printf("AuthRequired: Received cookie - Name: %s, Value: %s", cookie.Name, cookie.Value)
+		}
+
 		session := sessions.Default(c)
 		user := session.Get("user")
 
