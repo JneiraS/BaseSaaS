@@ -23,6 +23,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 chartLabels = ['Total Événements'];
                 chartData = [data.total_events];
             } else if (chartId === 'documentsChart') {
+                chartLabels = ['Total Documents'];
+                chartData = [data.total_documents];
+            }
 
             new Chart(document.getElementById(chartId), {
                 type: chartType,
@@ -72,6 +75,5 @@ document.addEventListener('DOMContentLoaded', function() {
     fetchDataAndCreateChart('/api/stats/members', 'membersChart', 'pie', [], '', 'Statistiques des Membres');
     fetchDataAndCreateChart('/api/stats/finance', 'financeChart', 'bar', [], '', 'Statistiques Financières');
     fetchDataAndCreateChart('/api/stats/events', 'eventsChart', 'bar', [], '', 'Statistiques des Événements');
-    
     fetchDataAndCreateChart('/api/stats/documents', 'documentsChart', 'bar', [], '', 'Statistiques des Documents');
 });
